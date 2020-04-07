@@ -780,10 +780,11 @@ par(mfrow=c(1,1))
 
 n <- 100
 z <- rcauchy(n, 0, 1)
-qqplot(qcauchy(ppoints(n), 0, 1), z,
+xx <- seq(0, 1, 0.01)
+qqplot(qnorm(xx, mean(z), sd(z)), z,
   xlab="True quantiles", ylab="Sample quantiles",
   main = TeX('Q-Q plot for Cauchy$(0,1)$'))
-qqline(z, distribution = function(p) qnorm(ppoints(p), mean(z), sd(z)), col = 2)
+qqline(xx, distribution = function(p) qnorm(ppoints(p), mean(z), sd(z)), col = 2)
 ```
 
 We can see that the center of the quantiles is more or less near the normal distribution, while in the extremes quantiles there are outliers (the last ones are really far from the line of the normal quantiles). This is because the Cauchy distribution has infinity variance, so we expect that the extremities of the distribution are not approximed by a normal distribution.
