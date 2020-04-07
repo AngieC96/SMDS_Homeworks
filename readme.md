@@ -24,11 +24,11 @@ In this section are listed the homeworks assigned from the previously cited sour
 * **Members:** Angela Carraro, Anna Spagnolo, Lorenzo Taroni
 
 * **Exercises:**
-* DAAG, Chapter 1, page 38:  exercises 4, 6, 11, 12, 13, 15, 17, 20.
-  
-* CS, Chapter 1, page 17: exercises 1.1, 1.2, 1.6, 1.8, 1.9.
-  
-* LAB 1: exercises 1, 2, 3, 4, 5, 6, 7, 8.
+  * DAAG, Chapter 1, page 38:  exercises 4, 6, 11, 12, 13, 15, 17, 20.
+    
+  * CS, Chapter 1, page 17: exercises 1.1, 1.2, 1.6, 1.8, 1.9.
+    
+  * LAB 1: exercises 1, 2, 3, 4, 5, 6, 7, 8.
 
 |                | DAAG                     | CS                       | LAB              |
 | -------------- | ------------------------ | ------------------------ | ---------------- |
