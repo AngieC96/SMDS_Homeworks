@@ -4,18 +4,16 @@ This repository contains the homeworks for the course **"Statistical Methods for
 
 ## Sources
 
-* [Data Analysis and Graphics Using R](http://www.pindex.com/uploads/post_docs/Maindonald%20Data%20Analysis%20and%20Graphics(PINDEX-DOC-6953).pdf), by John Maindonald and W.John Braun, here referred to as **DAAG**.
-  
-* [Core Statistics](https://people.maths.bris.ac.uk/~sw15190/core-statistics.pdf) by Simon N. Wood, here referred to as **CS**.
+The assigned exercises could come from different books/sources, generally we will adopt the following abbreviations:
 
-* [Laboratory sessions](https://moodle2.units.it/course/view.php?id=5505) held on *Microsoft Teams*, here referred to as **LAB** (You should have access to UniTS Moodle to follow the link).
-
-* Theoretical lectures, here referred to as **LEC**.
+- **DAAG**: for the exercises from *[Data Analysis and Graphics Using R](http://www.pindex.com/uploads/post_docs/Maindonald%20Data%20Analysis%20and%20Graphics(PINDEX-DOC-6953).pdf)*, by John Maindonald and W.John Braun.
+- **CS**: for the exercises from *[Core Statistics](https://people.maths.bris.ac.uk/~sw15190/core-statistics.pdf)*, by Simon N. Wood.
+- **LAB**: for the exercises contained in the [laboratory sessions](https://moodle2.units.it/course/view.php?id=5505) held on *Microsoft Teams*.
 
 
 ## Homeworks
 
-In this section are listed the homeworks assigned from the previously cited sources, alongside the group name, team composition and work division. Even though homeworks were splitted between team members to make their completion faster, they are reviewed entirely by all team members in order to ensure their correctness.
+In this section are listed the homeworks assigned from the previously cited sources, alongside the group name, team composition, work division and grade received. Even though homeworks were splitted between team members to make their completion faster, they are reviewed entirely by all team members in order to ensure their correctness.
 
 ### Homework 1
 
@@ -23,15 +21,14 @@ In this section are listed the homeworks assigned from the previously cited sour
 
 * **Group:** Group I
 
-* **Members:** Angela Carraro, Lorenzo Taroni, Anna 
+* **Members:** Angela Carraro, Anna Spagnolo, Lorenzo Taroni
 
-* **Sources:**
-
-  * DAAG, Chapter 1, page 38:  exercises 4, 6, 11, 12, 13, 15, 17, 20.
-
-  * CS, Chapter 1, page 17: exercises 1.1, 1.2, 1.6, 1.8, 1.9.
-
-  * LAB 1: exercises 1, 2, 3, 4, 5, 6, 7, 8.
+* **Exercises:**
+* DAAG, Chapter 1, page 38:  exercises 4, 6, 11, 12, 13, 15, 17, 20.
+  
+* CS, Chapter 1, page 17: exercises 1.1, 1.2, 1.6, 1.8, 1.9.
+  
+* LAB 1: exercises 1, 2, 3, 4, 5, 6, 7, 8.
 
 |                | DAAG                     | CS                       | LAB              |
 | -------------- | ------------------------ | ------------------------ | ---------------- |
@@ -39,4 +36,4 @@ In this section are listed the homeworks assigned from the previously cited sour
 | Lorenzo Taroni | 4, 6, 11, 12, 13, 15, 17 | -                        | -                |
 | Anna Spagnolo  | -                        | 1.1, 1.2, 1.6, 1.8, 1.9. | 3, 4             |
 
-- Grade: -
+- **Grade:** -

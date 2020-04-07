@@ -786,7 +786,7 @@ qqplot(qcauchy(ppoints(n), 0, 1), z,
 qqline(z, distribution = function(p) qnorm(ppoints(p), mean(z), sd(z)), col = 2)
 ```
 
-We can see that the center of the quantiles is more or less near the normal distribution, while in the extremes quantiles there are outliers (the last ones are really far from the line of the normal quantiles). This is because the Cauchy distributions has infinity variance, so we expect that the extremities of the distribution are not approximed by a normal distribution.
+We can see that the center of the quantiles is more or less near the normal distribution, while in the extremes quantiles there are outliers (the last ones are really far from the line of the normal quantiles). This is because the Cauchy distribution has infinity variance, so we expect that the extremities of the distribution are not approximed by a normal distribution.
 
 ### Exercise 8
 
