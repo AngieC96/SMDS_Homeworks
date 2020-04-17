@@ -692,13 +692,14 @@ t_mixture <- function(alpha, beta, n){
   return(X)
   
 }
-alpha <- 10
-beta <- 7
+alpha <- 100
+beta <- 20
 n <- 100000
-d <- density(t_mixture(alpha, beta, n))
-plot(d, main=paste("Mixture distribution"), xlab = "x")
-polygon(d, col="gray50")
-lines(density(rnbinom(n, size = alpha, prob = beta/(beta+1))), col = 2, lwd = 2)
+xx <- t_mixture(alpha, beta, n)
+# Since it is a discrete probability we use `hist`
+hist(xx,  probability = TRUE, breaks = 0:(max(xx)+1), xlim = c(0, (max(xx)+1)), xaxt="n", main=paste("Mixture distribution"), xlab = "x")
+axis(1, at=0:max(xx)+0.5, labels=0:max(xx))
+lines(0:n, dnbinom(0:n, size = alpha, prob = beta/(beta+1)), xlim = c(0, (max(xx)+1)), col = 2, lwd = 2)
 ```
 
 
