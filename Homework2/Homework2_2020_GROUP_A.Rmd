@@ -50,7 +50,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
-**Group I : Spagnolo, Carraro, Taroni**
+**Group A : Fernandez Santisteban, Marvulli, Spagnolo, Carraro**
 
 ```{r message=FALSE}
 library(MASS)
