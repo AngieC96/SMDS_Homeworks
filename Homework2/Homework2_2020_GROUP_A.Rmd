@@ -59,8 +59,8 @@ library(DAAG)
 
 ## DAAG Exercises
 
-Chapter 3, exercises 11, 13.
-Chapter 4, exercises 6, 7.
+Chapter 3 (from page 98), exercises 11, 13.
+Chapter 4 (from page 137), exercises 6, 7.
 
 ### Chapter 3, Exercise 11
 
@@ -73,7 +73,7 @@ Chapter 4, exercises 6, 7.
 
 ## CS Exercises
 
-Chapter 3, exercises 3.3 (hint: use system.time() function), 3.5.
+Chapter 3 (from page 76), exercises 3.3 (hint: use system.time() function), 3.5.
 
 ### Exercise 3.3
 
