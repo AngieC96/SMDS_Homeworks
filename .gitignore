@@ -48,7 +48,10 @@ vignettes/*.pdf
 *.out
 *.synctex.gz
 *.toc
+
+# Folders
 Homework1/figs/
+Homework2/figs/
 
 # Files
 Homework1_2020_OLD.html
