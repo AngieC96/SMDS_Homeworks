@@ -4,13 +4,13 @@ title: "Homework_1"
 #author: Angela Carraro
 date: "29/04/2020"
 output:
+  rmdformats::readthedown:
   html_document:
     highlight: kate
     lightbox: true
     gallery: true
     toc: yes
     toc_depth: 3
-  rmdformats::readthedown:
   beamer_presentation:
     highlight: kate
   include: null
