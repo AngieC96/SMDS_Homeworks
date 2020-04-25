@@ -1,15 +1,16 @@
+
 ---
 title: "Homework_1"
 #author: Angela Carraro
 date: "29/04/2020"
 output:
-  rmdformats::readthedown:
   html_document:
     highlight: kate
     lightbox: true
     gallery: true
     toc: yes
     toc_depth: 3
+  rmdformats::readthedown:
   beamer_presentation:
     highlight: kate
   include: null
@@ -45,7 +46,6 @@ local({
     paste0('\n\n----\n\n', hook_plot(x, options))
   })
 })
-
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -68,6 +68,54 @@ Chapter 4 (from page 137), exercises 6, 7.
 
 **Solution.**
 
+### Chapter 4, Exercise 7
+
+Create a function that does the calculations in the first two lines of the previous exercise. Put the calculation in a loop that repeats 25 times. Calculate the mean and variance for each vector $\mathsf{y}$ that is returned. Store the 25 means in the vector $\mathsf{av}$, and store the 25 variances in
+the vector $\mathsf{v}$. Calculate the variance of $\mathsf{av}$.
+
+**Solution:**
+
+The base implementation of the function is very easy. The point is that this function will be applied several times (passing its input from a matrix). In order to avoid unnecessary loops, before use the function it is neccessary to vectorize it. Vectorized function has been saved with the name $\mathsf{norm\_sample\_general(n)}$ where $\mathsf{n}$ is the number of samples to generate. It is run by setting 51 samples and 25 repetitions and then results are saved on $\mathsf{y}$ matrix.
+```{r DAAG4.7_1, echo=TRUE}
+#function to get n samples
+norm_sample <- function(n) {
+  y <- rnorm(n);
+  y <- y[-1] + y[-n];
+  return(y)
+}
+
+#vectorization of the previous function
+norm_sample_general <- Vectorize(norm_sample)
+
+#get 25 sets of 51 (50) samples
+y <- norm_sample_general(rep(51, 25))
+y[1:5,1:5]
+```
+
+Now mean and variance for each column of $\mathsf{y}$ must be computed. In the case of the mean it can be easily computed by applying the function $\mathsf{colMeans()}$ directly to $\mathsf{y}$. However, there is not any function similar to the previous one to calculate the variance (in the R base package). A similar function has been implemented with the name $\mathsf{colVars()}$.
+```{r DAAG4.7_2, echo=TRUE}
+#colVars function
+colVars <- function(x) {
+  return((colSums(x^2) - colSums(x))/length(x[1,]))
+}
+
+#mean and variance of all repetitions
+av <- colMeans(y)
+v <- colVars(y)
+
+#first 5 means
+av[1:5]
+
+#first 5 variances
+v[1:5]
+```
+Finally it is computed the variance of the means.
+```{r DAAG4.7_3, echo=TRUE}
+#variance of means
+variance <- var(av)
+variance
+```
+
 
 
 
@@ -88,8 +136,125 @@ Chapter 3 (from page 76), exercises 3.3 (hint: use system.time() function), 3.5.
 
 Exercises 1, 2, 3, 4 and 5.
 
+### Exercise 3
 
-### Exercise 1
+Sometimes it could be useful to asses the degree of association, or correlation, between paired samples, using the Pearson, the Kendall's $\tau$ or the Spearman's $\rho$ correlation coefficient. Regardless of the adopted cofficient, the null hypothesis for a given correlation coefficent $\rho$ is:
+
+$$
+H_0: \rho=0
+$$
+The test statistic is then defined as
+
+$$
+T=r \sqrt{\frac{n-2}{1-r^2}} \underset{H_0}{\sim} t_{n-2},
+$$
+where $\mathrm{Corr}(X, Y)$ is the Pearson correlation coefficient. Suppose to have two samples of the same length $x_1, ... , x_n, y_1, ... , y_n$, and to measure the association between them. Once we compute the test statistic $t_\mathrm{obs}$, we may then compute the $p$-value (here we are evaluating a two sided test) as:
+
+$$
+p=2Pr_{H_0}(T \geq |T_\mathrm{obs}|)
+$$
+Consider now some of the most followed Instagram accounts in 2018: for each of the owners, we report also the number of Twitter followers (in milions). Are the Instagram and Twitter account somehow associated? Perform a correlation test, compute the $p$-value and give an answer. Here is the dataframe.
+
+```{r lab3, echo=TRUE}
+Owners <- c( "Katy Perry", "Justin Bieber", "Taylor Swift", "Cristiano Ronaldo",
+                   "Kim Kardashian", "Ariana Grande", "Selena Gomez", "Demi Lovato")
+Instagram <- c( 69, 98,107, 123, 110, 118, 135, 67)
+Twitter <- c( 109, 106, 86, 72, 59, 57, 56, 56)
+plot( Instagram, Twitter, pch=21, bg=2, xlim=c(60, 150), ylim=c(40, 120) )
+text( Instagram[-6], Twitter[-6]+5, Owners[-6], cex=0.8 )
+text( Instagram[6], Twitter[6]-5, Owners[6], cex=0.8 )
+```
+
+**Solution.**
+
+In order to perform the test, let's calculate the $p$-value corresponding to the observations. This $p$-value will be calculated manually by using the Pearson's correlation.
+
+```{r lab3_sol, echo=TRUE}
+#parameters and correlation
+r <- cor(x=Instagram, y=Twitter, method = "pearson")
+n <- length(Instagram)
+alpha <- 0.05
+
+#t statistic and p-value
+t <- r*sqrt((n-2)/(1-r*r))
+pvalue <- pt(t, df=n-2, lower.tail = TRUE)
+
+pvalue
+```
+
+The resulting $p$-value is greater than $0.05$, so null hypothesis, in this case $\rho=0$, should be accepted. It means that in terms of the test, there is no sufficient significance to assume any association between the number of followers on Twitter and Instagram. Note that it does not implies that this correlation does not exist, it simply establish the fact that, according to the test, it cannot be confirmed that it exists any correlation, also if it is the case.
+
+The situation can also be shown on a graph:
+
+```{r lab3_plot, echo=TRUE}
+#plot
+library(RColorBrewer)
+plotclr <- brewer.pal(6,"YlOrRd")
+curve(dt(x,n-2),xlim=c(-5,5), ylim=c(0,0.4),
+      main="p-values and rejection region", col = "blue", lwd = 2, xlab="Corr(X, Y)",  ylab=expression(t[n-2]),  yaxs="i")
+cord.x_r <- c(qt(1-alpha/2,n-2),seq(qt(1-alpha/2,n-2), 5, 0.01), 5)
+cord.y_r <- dt(cord.x_r, n-2); cord.y_r[1] <- 0; cord.y_r[length(cord.y_r)] <- 0
+cord.x_l <- c(-5, seq(-5, qt(alpha/2,n-2), 0.01), qt(alpha/2,n-2))
+cord.y_l <- dt(cord.x_l, n-2); cord.y_l[1] <- 0; cord.y_l[length(cord.y_l)] <- 0
+polygon(cord.x_r,cord.y_r,col=plotclr[3], border = NA )
+polygon(cord.x_l,cord.y_l,col=plotclr[3], border = NA )
+curve(dt(x,n-2),xlim=c(-5,5),main=expression(t[n-2]), col = "blue", lwd = 2, add = TRUE, yaxs="i")
+abline(v =t, lty=2, lwd=2, col="red")
+text (0,0.2, paste("Accept", expression(H0)))
+text (4.3,0.08, paste("Reject", expression(H0)))
+text (-4.3,0.08, paste("Reject", expression(H0)))
+text(as.double(t)-0.15, 0.02, "t", col="red", cex=1.2)
+```
+As can be seen, the estimated statistic $T$ is within the acceptance region, as $p$-value indicates.
+
+### Exercise 4
+
+Compute analitically $J(\gamma, \gamma; y)$, $J(\gamma, \beta; y)$, $J(\beta, \beta; y)$.
+
+**Solution.**
+
+Since $J$ matrix must be derived from the log-likelihood, let's remember its expression:
+
+$$
+l(\gamma,\beta;y)=n \log(\gamma)  -  n \gamma \log(\beta)  +  \gamma \sum_{i=1}^n(\log(y_i))  -  \sum_{i=1}^n(y_i/\beta)^\gamma
+$$
+As $J$ matrix is defined by using the second-order derivatives on model's parameters, previously first-order derivatives must be computed. In order to make the computation, it will be consiedered the next identities:
+
+$$
+\begin{cases}
+\sum_{i=1}^n(y_i/\beta)^\gamma = \beta^{-\gamma}\sum_{i=1}^ny_i^\gamma \ \ \ \ \ \ \mathrm{(a)} \\
+\sum_{i=1}^n(y_i/\beta)^\gamma = \sum_{i=1}^ne^{\gamma\log(y_i/\beta)} \ \ \mathrm{(b)}
+\end{cases}
+$$
+
+In the computation of $\partial_\gamma$ and $\partial_\beta$, (b) and (a) identities are used respectively.
+
+$$
+\frac{\partial l(\gamma,\beta;y)}{\partial \gamma}  =  \frac{n}{\gamma}  -  n\log(\beta)  +  \sum_{i=1}^n\log(y_i/\beta)^\gamma   \\
+\frac{\partial l(\gamma,\beta;y)}{\partial \beta} = \frac{n\gamma}{\beta}  -  \frac{\gamma}{\beta} \sum_{i=1}^ny^i/\beta
+$$
+Now it is possible to compute second-order derivatives, which constitutes the elements of the $J$ matrix. Again to compute this expressions the (a) and (b) identities are used.
+
+1. $\partial_{\gamma\gamma}^2$ term:
+
+$$
+\frac{\partial^2 l(\gamma,\beta;y)}{\partial\gamma^2}  =  -\frac{n}{\gamma^2}  +  \sum_{i=1}^n \left( \frac{y_i}{\beta} \right)^\gamma \log\left( \frac{y_i}{\beta} \right)^2
+$$
+2. $\partial_{\gamma\beta}^2$ term:
+
+$$
+\frac{\partial^2 l(\gamma,\beta;y)}{\partial\gamma\partial\beta}  =  \frac{1}{\beta} \left[ n  +  \sum_{i=1}^n \left( \frac{y_i}{\beta} \right)^\gamma  +  \gamma\sum_{i=1}^n \left( \frac{y_i}{\beta} \right)^\gamma \log \frac{y_i}{\beta} \right]
+$$
+3. $\partial_{\beta\gamma}^2$ term:
+
+$$
+\frac{\partial^2 l(\gamma,\beta;y)}{\partial\beta\partial\gamma}  =  -\frac{n}{\beta}  +  \sum_{i=1}^n \left( \frac{y_i}{\beta} \right)^{\gamma-1}  -  \frac{\gamma}{\beta}\sum_{i=1}^n \left( \frac{y_i}{\beta} \right)^\gamma \log \frac{y_i}{\beta}
+$$
+4. $\partial_{\beta\beta}^2$ term:
+
+$$
+\frac{\partial^2 l(\gamma,\beta;y)}{\partial\beta^2}  =  -\frac{n\gamma}{\beta^2}  +  \gamma(\gamma+1)\beta^{-\gamma-2} \sum_{i=1}^ny_i^\gamma
+$$
 
 
 <!-- knitr::knit("Homework1_2020_GROUP_I.Rmd", tangle = TRUE, output ="Homework1_2020_GROUP_I.R") -->
