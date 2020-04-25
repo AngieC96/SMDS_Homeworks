@@ -91,5 +91,132 @@ Exercises 1, 2, 3, 4 and 5.
 
 ### Exercise 1
 
+Check the biased nature of $s^2_b$ via MC simulation, generating $n=10$ iid values from a normal distribution. Plot also $s^2$ and comment the difference.
+
+**Solution.**
+
+
+
+### Exercise 2
+
+What happens if a great player decides to join you, now? Try to simulate the data and perform the test again.
+
+**Solution.**
+
+
+
+### Exercise 3
+
+Sometimes it could be useful to assess the degree of association, or correlation, between paired samples, using the Pearson, the Kendall’s $\tau$ or the Spearman’s $\rho$ correlation coefficient. Regardless of the adopted cofficient, the null hypothesis for a given correlation coefficent $\rho$ is:
+
+$$
+H_0: \rho = 0.
+$$
+
+The test statistic is then defined as
+
+$$
+T = r \sqrt{\frac{n-2}{1-r^2}} \underset{H_0}{\sim} t_{n-2}
+$$
+
+where $r=\text{Corr}(X,Y)$ is the Pearson correlation coefficient. Suppose to have two samples of the same length $x_1, \ldots, x_n$, $y_1, \ldots, y_n$, and to measure the association between them. Once we compute the test statistic tobs, we may then compute the $p$-value (here we are evaluating a two sided test) as:
+
+$$
+p = 2 Pr_{H_0}(T \ge |t_\text{obs}|).
+$$
+
+Consider now some of the most followed Instagram accounts in 2018: for each of the owners, we report also the number of Twitter followers (in milions). Are the Instagram and Twitter account somehow associated? Perform a correlation test, compute the $p$-value and give an answer. Here is the dataframe.
+
+```{r}
+Owners <- c( "Katy Perry", "Justin Bieber", "Taylor Swift", "Cristiano Ronaldo",
+             "Kim Kardashian", "Ariana Grande", "Selena Gomez", "Demi Lovato")
+Instagram <- c( 69, 98,107, 123, 110, 118, 135, 67)
+Twitter <- c( 109, 106, 86, 72, 59, 57, 56, 56)
+plot( Instagram, Twitter, pch=21, bg=2, xlim=c(60, 150), ylim=c(40, 120) )
+text( Instagram[-6], Twitter[-6]+5, Owners[-6], cex=0.8 )
+text( Instagram[6], Twitter[6]-5, Owners[6], cex=0.8 )
+```
+
+**Solution.**
+
+
+
+### Exercise 4
+
+Compute analitically $J(\gamma, \gamma; y), J(\gamma, \beta; y), J(\beta, \beta; y)$.
+
+**Solution.**
+
+
+
+### Exercise 5
+
+Produce the contour plot for the quadratic approximation of the log-likelihood, based on the Taylor series:
+
+$$
+\mathcal{l}(\theta) − \mathcal{l}(\widehat{\theta}) \approx - \frac12 (\theta - \widehat{\theta})^T J(\widehat{\theta})(\theta - \widehat{\theta}).
+$$
+
+**Solution.**
+
+We then have that
+
+$$
+\mathcal{l}(\theta) \approx \mathcal{l}(\widehat{\theta}) - \frac12 (\theta - \widehat{\theta})^T J(\widehat{\theta})(\theta - \widehat{\theta}).
+$$
+We write the log-likelihood function in $\texttt{R}$:
+
+```{r, echo=TRUE}
+log_lik_weibull <- function(data, param){
+  sum(dweibull(data, shape = param[1], scale = param[2], log = TRUE))
+}
+```
+
+Then we write the quadratic approximation of the log-likelihood function in $\texttt{R}$:
+
+```{r}
+qapprox_llweibull <- function(data, param, paramhat, Jhat){
+  diff <- cbind(param[1] - paramhat[1], param[2] - paramhat[2])
+  log_lik_weibull(data, paramhat) - 0.5 * diff %*% Jhat %*% t(diff)
+}
+```
+
+
+```{r, echo=TRUE}
+y <- c(155.9, 200.2, 143.8, 150.1,152.1, 142.2, 147, 146, 146,
+        170.3, 148, 140, 118, 144, 97)
+n <- length(y)
+
+gammahat<-uniroot(function(x) n/x+sum(log(y))-n*
+    sum(y^x*log(y))/sum(y^x), c(1e-5,15))$root
+betahat<- mean(y^gammahat)^(1/gammahat)
+weib.y.mle<-c(gammahat,betahat) #first element is the MLE for the shape gamma, second element the MLE for the scale beta
+
+#observed information matrix
+jhat<-matrix(NA,nrow=2,ncol=2)
+jhat[1,1]<-n/gammahat^2+sum((y/betahat)^gammahat* (log(y/betahat))^2)
+jhat[1,2]<-jhat[2,1]<- n/betahat-sum(y^gammahat/betahat^(gammahat+1)*
+                                       (gammahat*log(y/betahat)+1))
+jhat[2,2]<- -n*gammahat/betahat^2+gammahat*(gammahat+1)/
+    betahat^(gammahat+2)*sum(y^gammahat)
+
+#define parameters grid
+gamma <- seq(0.1, 15, length=100)
+beta <- seq(100,200, length=100)
+parvalues <- expand.grid(gamma,beta)
+llikvalues <- apply(parvalues, 1, qapprox_llweibull, data=y,
+                    paramhat=weib.y.mle, Jhat=jhat)
+llikvalues <- matrix(llikvalues, nrow=length(gamma),
+                     ncol=length(beta), byrow=F)
+conf.levels <- c(0,0.5,0.75,0.9,0.95,0.99)
+
+#contour plot
+contour(gamma, beta, llikvalues-max(llikvalues),
+    levels=-qchisq(conf.levels, 2)/2,
+    xlab=expression(gamma),
+    labels=as.character(conf.levels),
+    ylab=expression(beta))
+title('Weibull relative log likelihood')
+```
 
 <!-- knitr::knit("Homework1_2020_GROUP_I.Rmd", tangle = TRUE, output ="Homework1_2020_GROUP_I.R") -->

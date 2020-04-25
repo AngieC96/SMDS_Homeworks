@@ -52,11 +52,11 @@ In this section are listed the homeworks assigned from the previously cited sour
   * CS: Chapter 3, exercises 3.3 (hint: use `system.time()` function), 3.5.
   * LAB: exercises 1, 2, 3, 4 and 5.
 
-|                                    | DAAG | CS   | LAB  |
-| ---------------------------------- | ---- | ---- | ---- |
-| Angela Carraro                     |      |      |      |
-| Rossella Marvulli                  |      |      |      |
-| José Antonio Fernández Santisteban |      |      |      |
-| Anna Spagnolo                      |      |      |      |
+|                                    | DAAG      | CS   | LAB  |
+| ---------------------------------- | --------- | ---- | ---- |
+| Angela Carraro                     | -         | 3.3  | 5    |
+| Rossella Marvulli                  | 3.11      | 3.5  | 2    |
+| José Antonio Fernández Santisteban | 4.7       | -    | 3, 4 |
+| Anna Spagnolo                      | 3.13, 4.6 | -    | 1    |
 
 - **Grade:** -
