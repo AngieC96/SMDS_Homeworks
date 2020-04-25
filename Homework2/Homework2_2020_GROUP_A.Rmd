@@ -59,7 +59,7 @@ library(DAAG)
 
 ## DAAG Exercises
 
-Chapter 3 (from page 98), exercises 11, 13.
+Chapter 3 (from page 98), exercises 11, 13. \
 Chapter 4 (from page 137), exercises 6, 7.
 
 ### Chapter 3, Exercise 11
@@ -109,13 +109,14 @@ av[1:5]
 #first 5 variances
 v[1:5]
 ```
+
 Finally it is computed the variance of the means.
+
 ```{r DAAG4.7_3, echo=TRUE}
 #variance of means
 variance <- var(av)
 variance
 ```
-
 
 
 
@@ -125,10 +126,59 @@ Chapter 3 (from page 76), exercises 3.3 (hint: use system.time() function), 3.5.
 
 ### Exercise 3.3
 
-...
+Rewrite the following, replacing the loop with efficient code:
+
+```{r, eval=FALSE, include=TRUE}
+n <- 100000; z <- rnorm(n)
+zneg <- 0; j <- 1
+for (i in 1:n) {
+  if (z[i]<0) {
+    zneg[j] <- z[i]
+    j <- j + 1
+  }
+}
+```
+
+Confirm that your rewrite is faster but gives the same result.
 
 **Solution.**
 
+A more efficient code is:
+
+```{r, echo=TRUE}
+n <- 100000; z <- rnorm(n)
+
+start_time2 <- Sys.time()
+zneg2 <- z[which(z < 0)]
+end_time2 <- Sys.time()
+
+end_time2 - start_time2
+```
+
+While the time of the given code is:
+
+```{r}
+start_time <- Sys.time()
+zneg <- 0; j <- 1
+for (i in 1:n) {
+  if (z[i]<0) {
+    zneg[j] <- z[i]
+    j <- j + 1
+  }
+}
+
+end_time <- Sys.time()
+
+end_time - start_time
+```
+
+We can see that our code is about 10 times faster that the given code.
+
+We have that the two methods give the same result:
+
+```{r, echo=TRUE}
+identical(zneg2, zneg)
+```
 
 
 
