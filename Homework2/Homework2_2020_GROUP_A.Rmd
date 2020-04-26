@@ -139,13 +139,6 @@ axis(1, 1, expression(hat(sigma)^2))
 
 The estimator sample mean appears unbiased, while the estimator sample variance is not.
 
-```{r, echo=TRUE}
-variances <- c(var(estimator_mean), var(estimator_var))
-variances
-```
-
-From these values we can see that the efficiency of the sample mean is quite good, since it has a low variance, while the sample variance has a very high variance so it is not reliable for estimating the parameter $\lambda = 78.3$ of the poisson distribution.
-
 Let’s check now whether all the estimators are consistent. For checking this statement, $n=7$ is extremely low and we need to increse it, let’s say $n=200$.
 
 ```{r, echo=TRUE}
@@ -158,6 +151,13 @@ for (i in 1:R){
   estimators_cons[i , 2] <- var(x)
 }
 
+variances <- c(var(estimators_cons[, 1]), var(estimators_cons[, 2]))
+variances
+```
+
+From these values we can see that the efficiency of the sample mean is quite good, since it has a low variance, while the sample variance has a very high variance so it is not so reliable for estimating the parameter $\lambda = 78.3$ of the poisson distribution.
+
+```{r, echo=TRUE}
 par(mfrow=c(1,2))
 hist(estimators_cons[, 1],  probability = TRUE, 
      breaks=40, main=substitute(hat(mu)), 
