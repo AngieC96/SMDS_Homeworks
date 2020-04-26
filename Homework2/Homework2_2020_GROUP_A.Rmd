@@ -176,6 +176,128 @@ We can see that the sample mean of our sample is basically equal to the mean of 
 In conclusion, the Poisson model is **not** appropriate for these data, since in a Poisson distribution mean and variance should coincide, while in our sample `y` the sample variance is double the value of the sample mean.
 
 
+### Chapter 3, Exercise 13
+
+A Markov chain for the weather in a particular season of the year has the transition matrix, from
+one day to the next:
+
+$$
+Pb=
+\begin{bmatrix}
+ & Sun & Cloud & Rain \\
+Sun & 0.6 & 0.2 & 0.2\\
+Cloud & 0.2 & 0.4 & 0.4\\
+Rain & 0.4 & 0.3 & 0.3
+\end{bmatrix}
+$$
+
+
+It can be shown, using linear algebra, that in the long run this Markov chain will visit the states
+according to the *stationary* distribution:
+
+
+\begin{table}[]
+\begin{tabular}{c|c|c}
+Sun & Cloud & Rain \\
+0.641 & 0.208 & 0.151 \\
+a & b & c \\
+\end{tabular}
+\end{table}
+
+
+
+A result called the *ergodic* theorem allows us to estimate this distribution by simulating the
+Markov chain for a long enough time.
+
+$$
+\begin{enumerate}
+\item  Simulate $1000$ values, and calculate the proportion of times the chain visits each of
+the states. Compare the proportions given by the simulation with the above theoretical
+proportions.
+\item  Here is code that calculates rolling averages of the proportions over a number of simulations
+and plots the result. It uses the function $\mathsf{rollmean()}$ from the $zoo$ package.
+\end{enumerate}
+$$ 
+
+$$
+\begin{align*}
+&\mathsf{\text{plotmarkov ←}}\\
+&\mathsf{\quad\text{function(n=10000, start=0, window=100, transition=Pb, npanels=5)}}\{\\
+&\mathsf{\qquad\text{xc2 ← Markov(n, start, transition)}}\\
+&\mathsf{\qquad \text{mav0 ← rollmean(as.integer(xc2==0), window)}}\\
+&\mathsf{\qquad \text{mav1 ← rollmean(as.integer(xc2==0), window)}}\\
+&\mathsf{\qquad \text{npanel ← cut(1:length(mav0), breaks=seq(from=1, to=length(mav0),}}\\
+&\mathsf{\qquad \qquad \qquad  \qquad \text{length=npanels+1), include.lowest=TRUE)}}\\
+&\mathsf{\qquad \text{df ← data.frame(av0=mav0, av1=mav1, x=1:length(mav0),
+gp=npanel)}}\\
+&\mathsf{\qquad \text{print(xyplot(av0+av1 ˜ x \mid gp, data=df, layout=c(1,npanels),}}\\
+&\mathsf{\qquad \qquad \qquad \qquad \text{type="l", par.strip.text=list(cex=0.65),}}\\
+&\mathsf{\qquad \qquad \qquad  \qquad \text{scales=list(x=list(relation="free"))))}}\\
+&\}
+\end{align*}
+$$
+
+Try varying the number of simulations and the width of the window. How wide a window
+is needed to get a good sense of the stationary distribution? This series settles down rather
+quickly to its stationary distribution (it “burns in” quite quickly). A reasonable width of
+window is, however, needed to give an accurate indication of the stationary distribution.
+
+
+
+**Solution.** 
+a.
+```{r, echo=TRUE}
+P=matrix(c(0.6, 0.2, 0.4, 0.2, 0.4, 0.3, 0.2, 0.4,0.3 ), 3, 3)
+ #the following function simulates N values of a Markov chain sequence, with transition matrix P (see Exercise 12)
+Markov <- function (N=100, initial.value=1, P)
+{
+  X <- numeric(N)
+  X[1] <- initial.value + 1 
+  n <- nrow(P)
+  for (i in 2:N){
+    X[i] <- sample(1:n, size=1, prob=P[X[i-1], ])}
+  X-1
+}
+
+#calculation of the proportions
+c<-Markov(1000,2,P)
+b<-vector("numeric", 3)
+for (i in 0:2){
+  b[i+1] <-sum(c==i)/length(c)}
+b
+```
+Repeating the simulation, in general the first proportion is lower, while the other two proportions are higher than the theoretical ones. 
+This may happen because we are not considering such a long period.
+
+b. 
+
+
+
+### Chapter 4, Exercise 6
+Here we generate random normal numbers with a sequential dependence structure:
+$$
+\begin{align*}
+&\mathsf{\text{y1 ← rnorm(51)}}\\
+&\mathsf{\text{y ← y1[-1] + y1[-51]}}\\
+&\mathsf{\text{acf(y1)              # acf is ‘autocorrelation function’}}\\
+&\mathsf{\text{                       # (see Chapter 9)}}\\
+&\mathsf{\text{acf(y)}}
+\end{align*}
+$$
+
+Repeat this several times. There should be no consistent pattern in the $\mathsf{acf}$ plot for different
+random samples $\mathsf{y1}$. There will be a fairly consistent pattern in the $\mathsf{acf}$ plot for $\mathsf{y}$, a result of
+the correlation that is introduced by adding to each value the next value in the sequence
+
+**Solution.**
+```{r, echo=TRUE}
+y1 <- rnorm(51)
+y <- y1[-1] + y1[-51]
+acf(y1) 
+acf(y)
+```
+
+
 ### Chapter 4, Exercise 7
 
 Create a function that does the calculations in the first two lines of the previous exercise:
@@ -365,7 +487,38 @@ Exercises 1, 2, 3, 4 and 5.
 Check the biased nature of $s^2_b$ via MC simulation, generating $n=10$ iid values from a normal distribution. Plot also $s^2$ and comment the difference.
 
 **Solution.**
+**Solution.**
+```{r, echo=TRUE}
+set.seed(123)
+R <- 1000
+n <- 10
+#generate n values R times
+samples  <- array(0, c(R, n))
+for (i in 1:R){
+  samples[i, ] <- rnorm(n, 0, 1)}
 
+#sample variance
+  v <- apply(samples, 1,  var )
+
+sigma <- 1
+par (mfrow=c(1,1), oma=c(0,0,0,0))
+hist(v, breaks= 40, probability = TRUE,  main= bquote(s^2), cex.main=1.5)
+curve((n/sigma^2) * dchisq(x * (n/sigma^2), df = n - 1),
+      add = TRUE, col="blue", lwd=2, main="N(0,1)")
+```
+
+We can see that $s^2_b$ is a biased estimator for the variance because its mean is lower than $1$.
+
+ ```{r, echo=TRUE}
+par (mfrow=c(1,1), oma=c(0,0,0,0))
+hist(v, breaks= 40, probability = TRUE,  main= "Comparison", cex.main=1.5)
+curve((n/sigma^2) * dchisq(x * (n/sigma^2), df = n - 1),
+      add = TRUE, col="blue", lwd=2)
+curve(((n-1)/sigma^2) * dchisq(x * ((n-1)/sigma^2), df = n - 1),
+      add = TRUE, col="red", lwd=2)
+legend("topright", legend = c("s^2", "s^2_b"), col = c("red", "blue"), lty = 1)
+```
+We compare the two estimators: $s^2$, being unbiased, can be preferred.
 
 
 ### Exercise 2
