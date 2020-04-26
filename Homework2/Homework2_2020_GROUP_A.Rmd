@@ -172,14 +172,22 @@ abline(v=78.3, col="blue", lwd=2)
 
 We can see that the histogram of the sample mean is less wide in width than the histogram of the sample mean. This tells us that the sample mean is the best estimator for the parameter $\lambda$ in a Poisson distribution.
 
-We can see that the sample mean of our sample is basically equal to the mean of the distribution $\mathcal{Po}(78.3)$, but the variance of the former is very far from the variance of the latter.
+We can see that the sample mean of our sample is basically equal to the mean of the distribution $\mathcal{Po}(78.3)$, and so it is equal to the value of $\lambda$, but the variance of the former is very far from the variance of the latter.
 
 In conclusion, the Poisson model is **not** appropriate for these data, since in a Poisson distribution mean and variance should coincide, while in our sample `y` the sample variance is double the value of the sample mean.
 
 
 ### Chapter 4, Exercise 7
 
-Create a function that does the calculations in the first two lines of the previous exercise. Put the calculation in a loop that repeats 25 times. Calculate the mean and variance for each vector $\mathsf{y}$ that is returned. Store the 25 means in the vector $\mathsf{av}$, and store the 25 variances in
+Create a function that does the calculations in the first two lines of the previous exercise:
+
+```{r, eval=FALSE}
+y1 <- rnorm(51)
+y <- y1[-1] + y1[-51]
+```
+
+
+Put the calculation in a loop that repeats 25 times. Calculate the mean and variance for each vector $\mathsf{y}$ that is returned. Store the 25 means in the vector $\mathsf{av}$, and store the 25 variances in
 the vector $\mathsf{v}$. Calculate the variance of $\mathsf{av}$.
 
 **Solution.**
@@ -364,8 +372,8 @@ The situation can also be shown on a graph:
 #plot
 library(RColorBrewer)
 plotclr <- brewer.pal(6,"YlOrRd")
-curve(dt(x,n-2),xlim=c(-5,5), ylim=c(0,0.4),
-      main="p-values and rejection region", col = "blue", lwd = 2, xlab="Corr(X, Y)",  ylab=expression(t[n-2]),  yaxs="i")
+curve(dt(x,n-2),xlim=c(-5,5), ylim=c(0,0.4), main="p-values and rejection region",
+      col = "blue", lwd = 2, xlab="Corr(X, Y)",  ylab=expression(t[n-2]),  yaxs="i")
 cord.x_r <- c(qt(1-alpha/2,n-2),seq(qt(1-alpha/2,n-2), 5, 0.01), 5)
 cord.y_r <- dt(cord.x_r, n-2); cord.y_r[1] <- 0; cord.y_r[length(cord.y_r)] <- 0
 cord.x_l <- c(-5, seq(-5, qt(alpha/2,n-2), 0.01), qt(alpha/2,n-2))
