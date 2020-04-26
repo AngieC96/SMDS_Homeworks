@@ -1,4 +1,3 @@
-
 ---
 title: "Homework_2"
 #author: Angela Carraro
@@ -269,6 +268,7 @@ start_time2 <- Sys.time()
 zneg2 <- z[which(z < 0)]
 end_time2 <- Sys.time()
 
+system.time(zneg2 <- z[which(z < 0)])
 end_time2 - start_time2
 ```
 
@@ -283,9 +283,7 @@ for (i in 1:n) {
     j <- j + 1
   }
 }
-
 end_time <- Sys.time()
-
 end_time - start_time
 ```
 
@@ -296,6 +294,65 @@ We have that the two methods give the same result:
 ```{r, echo=TRUE}
 identical(zneg2, zneg)
 ```
+
+
+## Exercise 3.5
+
+Consider solving the matrix equation $Ax=y$ for $x$, where $y$ is a known nxn matrix. The formal solution to the problem is $x= A^{-1}y$, but it is possible to solve the equation directly, without actually forming $A^{-1}$. This question explores this direct solution. Read the help file for "solve" before trying it.
+
+a. First create and $A$, $x$ and $y$ satisfying $Ax=y$.
+
+```{r}
+set.seed(0); n <- 1000
+A <- matrix(runif(n*n),n,n); x.true <- runif(n)
+y <- A%*%x.true
+```
+
+The idea is to experiment with solving $Ax=y$ for $x$, but with a known truth to compare the answer to.
+
+b. Using "solve", form the matrix $A^{-1}$ explicitly and then form $x_1= A^{-1}y$ and $x.true$ (the approximate mean absolute 'error' in the solution).
+
+c. Now use "solve" to directly solve for $x$ without forming $A^{-1}$. Note how long this takes and assess the mean absolute error of the result.
+
+d. What do you conclude?
+
+
+**Solution**
+
+a. We create and $A$, $x$ and $y$ satisfying $Ax=y$:
+
+```{r}
+set.seed(0); n <- 1000
+A <- matrix(runif(n*n), n, n);
+x.true <- runif(n)
+y <- A %*% x.true  
+#solve(A, y)  #cerco x che risolva l'equazione
+```
+
+b. Let's solve the inverse by using the function `solve(A)` and let's compute how long it takes throught the function `system.time`.
+
+```{r}
+set.seed(0); n <- 1000
+A <- matrix(runif(n*n),n,n); x.true <- runif(n)
+x.true <- runif(n)
+Ainv <- solve(A) 
+x1 <- Ainv %*% y
+mad(x.true, x1)
+system.time(solve(A) %*% y, gcFirst= TRUE)
+```
+
+c. We use "solve" to directly solve for $x$ without forming $A^{-1}$:
+
+```{r}
+set.seed(0); n <- 1000
+A <- matrix(runif(n*n), n, n);
+x.true <- runif(n)
+x2 <- solve(A, y)
+mad(x.true, x2)
+system.time(solve(A, y), gcFirst=TRUE)
+```
+
+d. Through the way exposed in point b we get the median absolute error 2.577135e-11, while through the way exposed in point (c) we get the median absolute error 1.708318e-12, less than the previous one; moreover, this last solving procedure takes less than the other one in terms of computational cost (as the result of `system.time` shows). Hence we get that the method of solving $Ax=y$ which does not involve the computation of the inverse matrix is more efficient.
 
 
 
@@ -315,7 +372,66 @@ Check the biased nature of $s^2_b$ via MC simulation, generating $n=10$ iid valu
 
 What happens if a great player decides to join you, now? Try to simulate the data and perform the test again.
 
-**Solution.**
+**Solution.** (Dovr? rivederla (ROSS))
+
+```{r}
+library("ggplot2")
+set.seed(101)
+n <- 50
+K <- 4
+
+##### here is the pro alone ####
+# generate the values
+y <- sample( 1:K, n, replace=TRUE, prob =c( 1/16, 3/16, 5/16, 7/16) )
+observed <- table(y)
+expected <- c( n*(1/16), n*(3/16), n*(5/16), n*(7/16) )
+x2 <- sum( (observed-expected)^(2)/expected)
+# manually compute the p-value
+pchisq(x2, df =K-1, lower.tail =FALSE )
+# same result with the chisq.test function
+chisq.test( observed, p = c( 1/16, 3/16, 5/16, 7/16) )
+knitr::opts_chunk$set(echo = TRUE)
+
+#########
+# we're in 7 now
+m <- 7
+friends <- array(0, c(m, n))
+# 6 are bad
+for (j in (1:(m-1)))
+{
+  friends[j, ] <- sample(1:K, n, replace=TRUE, prob=c(7/16, 5/16, 3/16, 1/16))
+}
+# here the pro
+friends[m, ] <- sample(1:K, n, replace=TRUE, prob=c(1/16, 3/16, 5/16, 7/16))
+
+############
+observed <- array(0, c(m, K))
+for (j in (1:m))
+{
+  observed[j, ] <- table(friends[j, ]) 
+}
+
+###########
+expected <- array(0, c(m, K))
+for (j in (1:m-1))
+{
+  expected[j, ] <- c( n*(7/16), n*(5/16), n*(3/16), n*(1/16) )
+}
+expected[m, ] <- c( n*(1/16), n*(3/16), n*(5/16), n*(7/16) )
+
+##########
+difference <- array(0, c(m, K))
+for (j in (1:m))
+{
+  for (i in (1:K))
+  {
+    difference[j, i] = ((observed[j, i] - expected[j, i])^2/expected[j, i])
+  }
+}
+
+x2 <- sum(difference)
+pchisq(x2, df = K-1, lower.tail =FALSE )
+```
 
 
 ### Exercise 3
@@ -515,5 +631,6 @@ image(gamma, beta, appllikvalues - max(appllikvalues), zlim=c(-6,0),
     ylab=expression(beta))
 title('Weibull quadratic approximation of log likelihood')
 ```
+
 
 <!-- knitr::knit("Homework1_2020_GROUP_I.Rmd", tangle = TRUE, output ="Homework1_2020_GROUP_I.R") -->
