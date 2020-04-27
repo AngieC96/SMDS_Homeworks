@@ -3,13 +3,13 @@ title: "Homework_2"
 #author: Angela Carraro
 date: "29/04/2020"
 output:
+  rmdformats::readthedown:
   html_document:
     highlight: kate
     lightbox: true
     gallery: true
     toc: yes
     toc_depth: 3
-  rmdformats::readthedown:
   beamer_presentation:
     highlight: kate
   include: null
@@ -277,7 +277,7 @@ plotmarkov()
 plotmarkov(n=1000000, window=10000)
 ```
 
-
+==CONCLUSIONS!!!!!!==
 
 
 ### Chapter 4, Exercise 6
@@ -308,7 +308,7 @@ for(i in 1:4) {
 }
 ```
 
-We can see that in the $\mathsf{acf}$ plot for $\mathsf{y1}$ there is no correlation: in the plots the lineas are always under the horizontal blue lines. Instead,  in the $\mathsf{acf}$ plot for $\mathsf{y}$ the values sometimes are above or really near the blue lines, particullary the second line, denoting a clear sign of pattern.
+We can see that in the $\mathsf{acf}$ plot for $\mathsf{y1}$ there is no correlation: in the plots the lineas are always under the horizontal blue lines. Instead, in the $\mathsf{acf}$ plot for $\mathsf{y}$ the values sometimes are above or really near the blue lines, particullary the second line, denoting a clear sign of pattern.
 
 ### Chapter 4, Exercise 7
 
@@ -320,12 +320,12 @@ y <- y1[-1] + y1[-51]
 ```
 
 
-Put the calculation in a loop that repeats 25 times. Calculate the mean and variance for each vector $\mathsf{y}$ that is returned. Store the 25 means in the vector $\mathsf{av}$, and store the 25 variances in
-the vector $\mathsf{v}$. Calculate the variance of $\mathsf{av}$.
+Put the calculation in a loop that repeats 25 times. Calculate the mean and variance for each vector $\mathsf{y}$ that is returned. Store the 25 means in the vector $\mathsf{av}$, and store the 25 variances in the vector $\mathsf{v}$. Calculate the variance of $\mathsf{av}$.
 
 **Solution.**
 
 The base implementation of the function is very easy. The point is that this function will be applied several times (passing its input from a matrix). In order to avoid unnecessary loops, before use the function it is neccessary to vectorize it. Vectorized function has been saved with the name $\mathsf{norm\_sample\_general(n)}$ where $\mathsf{n}$ is the number of samples to generate. It is run by setting 51 samples and 25 repetitions and then results are saved on $\mathsf{y}$ matrix.
+
 ```{r DAAG4.7_1, echo=TRUE}
 #function to get n samples
 norm_sample <- function(n) {
@@ -343,6 +343,7 @@ y[1:5,1:5]
 ```
 
 Now mean and variance for each column of $\mathsf{y}$ must be computed. In the case of the mean it can be easily computed by applying the function $\mathsf{colMeans()}$ directly to $\mathsf{y}$. However, there is not any function similar to the previous one to calculate the variance (in the $\texttt{R}$ base package). A similar function has been implemented with the name $\mathsf{colVars()}$.
+
 ```{r DAAG4.7_2, echo=TRUE}
 #colVars function
 colVars <- function(x) {
@@ -367,7 +368,6 @@ Finally it is computed the variance of the means.
 variance <- var(av)
 variance
 ```
-
 
 
 ## CS Exercises
@@ -450,7 +450,7 @@ A <- matrix(runif(n*n),n,n); x.true <- runif(n)
 y <- A%*%x.true
 ```
 
-The idea is to experiment with solving $\mathbf{Ax}=\mathbf{y}$ for $\mathbf{x}$, but with a known truth to compare the answer to.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; The idea is to experiment with solving $\mathbf{Ax}=\mathbf{y}$ for $\mathbf{x}$, but with a known truth to compare the answer to.
 
 b. Using `solve`, form the matrix $\mathbf{A}^{-1}$ explicitly and then form $\mathbf{x}_1= \mathbf{A}^{-1} \mathbf{y}$. Note how long this takes. Also assess the mean absolute difference between `x1` and `x.true` (the approximate mean absolute 'error' in the solution).
 
@@ -482,14 +482,12 @@ system.time(solve(A) %*% y, gcFirst= TRUE)
 c. We use `solve` to directly solve for $\mathbf{x}$ without forming $\mathbf{A}^{-1}$:
 
 ```{r}
-set.seed(0); n <- 1000
 x2 <- solve(A, y)
 mad(x.true, x2)
 system.time(solve(A, y), gcFirst=TRUE)
 ```
 
 d. Through the way exposed in point (b) we get the median absolute error 2.577135e-11, while through the way exposed in point (c) we get the median absolute error 1.708318e-12, less than the previous one; moreover, this last solving procedure takes less than the other one in terms of computational cost (as the result of `system.time` shows). Hence we get that the method of solving $\mathbf{Ax}=\mathbf{y}$ which does not involve the computation of the inverse matrix is more efficient.
-
 
 
 ## LAB Exercises
@@ -533,7 +531,6 @@ for(i in 1:R) {
 m_b <- mean(var_b)
 m_b
 ```
-
 
 We compare $s_b^2$ and $s^2$:
 
