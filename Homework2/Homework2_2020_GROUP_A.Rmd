@@ -82,16 +82,18 @@ mean(x); var(x)
 **Solution.**
 
 ```{r, echo=TRUE}
+x <- rpois(7, 78.3)
+mean(x); var(x)
+
 y <- c(87, 53, 72, 90, 78, 85, 83)
-n <- length(y)
 
 #sample mean:
 m <- mean(y)
-m
 
 #sample variance:
 s <- var(y)
-s
+
+c(mean=m, var=s)
 ```
 
 ```{r, echo=TRUE}
@@ -110,7 +112,7 @@ R <- 1000 # number of replications
 
 estimator_mean <- c()
 estimator_var <- c()
-x <- matrix(NA, R,n)
+x <- matrix(NA, R, 7)
 
 for (i in 1:R){
   x[i, ] <- rpois(7, 78.3)
@@ -304,16 +306,18 @@ Repeat this several times. There should be no consistent pattern in the $\mathsf
 **Solution.**
 
 ```{r, echo=TRUE}
-par(mfrow=c(4, 2), mar=c(3,2.5,1,1), mgp=c(1.5, 0.5, 0))
+par(mfrow=c(4, 2), mar=c(3,4,3,1), mgp=c(1.5, 0.5, 0))
 for(i in 1:4) {
   y1 <- rnorm(51)
   y <- y1[-1] + y1[-51]
-  acf(y1, ylab = "y1")
-  acf(y, ylab = "y")
+  acf(y1)
+  acf(y)
 }
 ```
 
-We can see that in the $\mathsf{acf}$ plot for $\mathsf{y1}$ there is no correlation: in the plots the lineas are always under the horizontal blue lines. Instead, in the $\mathsf{acf}$ plot for $\mathsf{y}$ the values sometimes are above or really near the blue lines, particullary the second line, denoting a clear sign of pattern.
+The `correlogram`acf` is a commonly used tool for checking randomness in a data set. This randomness is ascertained by computing autocorrelations for data values at varying time lags. If random, such autocorrelations should be near zero for any and all time-lag separations. If non-random, then one or more of the autocorrelations will be significantly non-zero.
+
+We can see that in the $\mathsf{acf}$ plot for $\mathsf{y1}$ there is no correlation: in the plots the lineas are always under the horizontal blue lines. Instead, in the $\mathsf{acf}$ plot for $\mathsf{y}$ the values sometimes are above or really near the blue lines, particullary the second line, denoting a clear sign of autocorrelation.
 
 ### Chapter 4, Exercise 7
 
@@ -469,6 +473,8 @@ d. What do you conclude?
 a. We create and $\mathbf{A}$, $\mathbf{x}$ and $\mathbf{y}$ satisfying $\mathbf{Ax}=\mathbf{y}$:
 
 ```{r}
+library(Metrics)
+
 set.seed(0); n <- 1000
 A <- matrix(runif(n*n), n, n);
 x.true <- runif(n)
@@ -480,7 +486,9 @@ b. Let's solve the inverse by using the function `solve(A)` and let's compute ho
 ```{r}
 Ainv <- solve(A) 
 x1 <- Ainv %*% y
-mad(x.true, x1)
+mean(abs(x.true - x1))
+# or
+mae(x.true, x1)
 system.time(solve(A) %*% y, gcFirst= TRUE)
 ```
 
@@ -488,11 +496,12 @@ c. We use `solve` to directly solve for $\mathbf{x}$ without forming $\mathbf{A}
 
 ```{r}
 x2 <- solve(A, y)
-mad(x.true, x2)
+mean(abs(x.true - x2))
+mae(x.true, x2)
 system.time(solve(A, y), gcFirst=TRUE)
 ```
 
-d. Through the way exposed in point (b) we get the median absolute error 2.577135e-11, while through the way exposed in point (c) we get the median absolute error 1.708318e-12, less than the previous one; moreover, this last solving procedure takes less than the other one in terms of computational cost (as the result of `system.time` shows). Hence we get that the method of solving $\mathbf{Ax}=\mathbf{y}$ which does not involve the computation of the inverse matrix is more efficient.
+d. Through the way exposed in point (b) we get the mean absolute error 2.956833e-11, while through the way exposed in point (c) we get the mean absolute error 1.356142e-12, less than the previous one, which means that it is more precise by roughly one order of magnitude. Moreover, this last solving procedure takes less than the other one in terms of time and so of computational cost (as the result of `system.time` shows). Hence we get that the method of solving $\mathbf{Ax}=\mathbf{y}$ which does not involve the computation of the inverse matrix is more efficient.
 
 
 ## LAB Exercises
@@ -546,10 +555,10 @@ curve((n/sigma^2) * dchisq(x * (n/sigma^2), df = n - 1),
       add = TRUE, col="blue", lwd=2)
 curve(((n-1)/sigma^2) * dchisq(x * ((n-1)/sigma^2), df = n - 1),
       add = TRUE, col="red", lwd=2)
-legend("topright", legend = c(expression("s^2"), expression("s^2_b")), col = c("red", "blue"), lty = 1)
+legend("topright", legend = c(expression(s^2), expression({s^2}[b])), col = c("red", "blue"), lty = 1)
 ```
 
-We compare the two estimators: $s^2$, being unbiased, can be preferred.
+We can see that the blue curve of $s^2_b$ is more shifted to the left with respect to the red curve of $s^2$. In the end $s^2$, being unbiased, shold be preferred.
 
 
 ### Exercise 2
