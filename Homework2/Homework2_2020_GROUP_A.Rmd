@@ -680,9 +680,9 @@ polygon(cord.x_r,cord.y_r,col=plotclr[3], border = NA )
 polygon(cord.x_l,cord.y_l,col=plotclr[3], border = NA )
 curve(dt(x,n-2),xlim=c(-5,5),main=expression(t[n-2]), col = "blue", lwd = 2, add = TRUE, yaxs="i")
 abline(v =t, lty=2, lwd=2, col="red")
-text (0,0.2, paste("Accept", expression(H0)))
-text (4.3,0.08, paste("Reject", expression(H0)))
-text (-4.3,0.08, paste("Reject", expression(H0)))
+text(0,0.2, expression(paste("Accept H"[0])))
+text(4.3,0.08, expression(paste("Reject H"[0])))
+text(-4.3,0.08, expression(paste("Reject H"[0])))
 text(as.double(t)-0.15, 0.02, "t", col="red", cex=1.2)
 ```
 
