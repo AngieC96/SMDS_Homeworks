@@ -226,6 +226,12 @@ Try varying the number of simulations and the width of the window. How wide a wi
 
 **Solution.**
 
+Looking at the DAAG’s errata corrige (file [link](https://maths-people.anu.edu.au/~johnm/r-book/3edn/updates/updates2011.pdf) at this [page](https://maths-people.anu.edu.au/~johnm/r-book/daagur3.html)) we see that the stationary distribution is wrong. The rigth real proportions are:
+
+|Sun | Cloud | Rain|
+|---|---|---|
+|0.429 | 0.286 | 0.286 |
+
 a. We simulate $1000$ values:
 
 ```{r, echo=TRUE}
@@ -250,8 +256,7 @@ b <- as.vector(table(c))/length(c)
 b
 ```
 
-Repeating the simulation, in general the first proportion is lower, while the other two proportions are higher than the theoretical ones. \
-This may happen because we are not considering such a long period.
+Repeating the simulation we see that in general the proportions found are very similar to the real ones.
 
 b. We try varying the number of simulations and the width of the window:
 
@@ -539,12 +544,11 @@ par (mfrow=c(1,1), oma=c(0,0,0,0))
 hist(v, breaks= 40, probability = TRUE,  ylim = c(0, 1.1),  main= "Comparison", cex.main=1.5)
 curve((n/sigma^2) * dchisq(x * (n/sigma^2), df = n - 1),
       add = TRUE, col="blue", lwd=2)
-abline(v=m_b, col="blue")
 curve(((n-1)/sigma^2) * dchisq(x * ((n-1)/sigma^2), df = n - 1),
       add = TRUE, col="red", lwd=2)
-abline(v=m, col="red")
 legend("topright", legend = c(expression("s^2"), expression("s^2_b")), col = c("red", "blue"), lty = 1)
 ```
+
 We compare the two estimators: $s^2$, being unbiased, can be preferred.
 
 
@@ -552,12 +556,11 @@ We compare the two estimators: $s^2$, being unbiased, can be preferred.
 
 What happens if a great player decides to join you, now? Try to simulate the data and perform the test again.
 
-**Solution.** (Dovr? rivederla (ROSS))
+**Solution.**
 
 If the great player plays alone we have:
 
 ```{r}
-library("ggplot2")
 set.seed(101)
 n <- 50
 K <- 4
@@ -577,40 +580,37 @@ If he plays with other 6 friends, such that the total numeber of players is 7 , 
 
 ```{r}
 M <- 7
-friends <- array(0, c(M, n))
+y <- matrix(0, nrow = M, ncol = n)
 # 6 palyers are bad players
-for (j in (1:(M-1)))
-  friends[j, ] <- sample(1:K, n, replace=TRUE, prob=c(7/16, 5/16, 3/16, 1/16))
+for (j in 1:(M-1))
+  y[j, ] <- sample(1:K, n, replace=TRUE, prob=c(7/16, 5/16, 3/16, 1/16))
 # here the pro player
-friends[M, ] <- sample(1:K, n, replace=TRUE, prob=c(1/16, 3/16, 5/16, 7/16))
+y[M, ] <- sample(1:K, n, replace=TRUE, prob=c(1/16, 3/16, 5/16, 7/16))
 
-############
-observed <- array(0, c(M, K))
-for (j in (1:M))
-{
-  observed[j, ] <- table(friends[j, ]) 
-}
+observed <- t(apply(y, 1, table))
 
-###########
-expected <- array(0, c(M, K))
-for (j in (1:(M-1)))
-  expected[j, ] <- c( n*(7/16), n*(5/16), n*(3/16), n*(1/16) )
+expected <- matrix(c(n*(7/16), n*(5/16), n*(3/16), n*(1/16)), nrow = M , ncol = K, byrow = TRUE)
+expected[M, ] <- c(n*(1/16), n*(3/16), n*(5/16), n*(7/16))
 
-expected[M, ] <- c( n*(1/16), n*(3/16), n*(5/16), n*(7/16) )
-
-##########
-difference <- array(0, c(M, K))
-for (j in (1:M))
-{
-  for (i in (1:K))
-  {
+difference <- matrix(0, nrow = M, ncol = K)
+for (j in 1:M) {
+  for (i in 1:K) {
     difference[j, i] = ((observed[j, i] - expected[j, i])^2/expected[j, i])
   }
 }
 
 x2 <- sum(difference)
-pchisq(x2, df = K-1, lower.tail =FALSE )
+# manually compute the p-value
+pchisq(x2, df = (K-1)*(M-1), lower.tail =FALSE )
+# same result with the chisq.test function
+prob <- matrix(0, nrow = M, ncol = K)
+for (j in 1:(M-1)) 
+  prob[j, ] <- c( 7/16, 5/16, 3/16, 1/16)
+prob[M, ] = c(1/16, 3/16, 5/16, 7/16)
+chisq.test(observed, p = prob)
 ```
+
+We observe that when a good player joins the game the $p$-value becomes very low because the good player unbalances the test statistic. Moreover, we can observe that the $\texttt{R}$ function `chisq.test` holds when we assume that all the players have the same probabilities to perform the game; for this reason, the $p$-value manually computed and the $p$-value given by this `chisq.test` result to be very different.
 
 
 ### Exercise 3
@@ -620,16 +620,19 @@ Sometimes it could be useful to asses the degree of association, or correlation,
 $$
 H_0: \rho = 0
 $$
+
 The test statistic is then defined as
 
 $$
 T = r \sqrt{\frac{n-2}{1-r^2}} \underset{H_0}{\sim} t_{n-2},
 $$
+
 where $\mathrm{Corr}(X, Y)$ is the Pearson correlation coefficient. Suppose to have two samples of the same length $x_1, \ldots, x_n$, $y_1, \ldots, y_n$, and to measure the association between them. Once we compute the test statistic $t_\mathrm{obs}$, we may then compute the $p$-value (here we are evaluating a two sided test) as:
 
 $$
 p = 2 Pr_{H_0}(T \geq |T_\mathrm{obs}|).
 $$
+
 Consider now some of the most followed Instagram accounts in 2018: for each of the owners, we report also the number of Twitter followers (in milions). Are the Instagram and Twitter account somehow associated? Perform a correlation test, compute the $p$-value and give an answer. Here is the dataframe.
 
 ```{r lab3, echo=TRUE}
@@ -701,47 +704,50 @@ $$
 Since $J$ matrix must be derived from the log-likelihood, let's remember its expression:
 
 $$
-l(\gamma,\beta;y)=n \log(\gamma)  -  n \gamma \log(\beta)  +  \gamma \sum_{i=1}^n(\log(y_i))  -  \sum_{i=1}^n(y_i/\beta)^\gamma
-$$
-As $J$ matrix is defined by using the second-order derivatives on model's parameters, previously first-order derivatives must be computed. In order to make the computation, it will be consiedered the next identities:
-
-$$
-\begin{cases}
-\sum_{i=1}^n(y_i/\beta)^\gamma = \beta^{-\gamma}\sum_{i=1}^ny_i^\gamma \ \ \ \ \ \ \mathrm{(a)} \\
-\sum_{i=1}^n(y_i/\beta)^\gamma = \sum_{i=1}^ne^{\gamma\log(y_i/\beta)} \ \ \mathrm{(b)}
-\end{cases}
+l(\gamma,\beta;y) = n \log (\gamma) - n \gamma \log (\beta)  +  \gamma \sum_{i=1}^n \log(y_i)  -  \sum_{i=1}^n \left( \frac{y_i}{\beta} \right)^\gamma
 $$
 
-In the computation of $\partial_\gamma$ and $\partial_\beta$, (b) and (a) identities are used respectively.
+As $J$ matrix is defined by using the second-order derivatives on model's parameters, previously first-order derivatives must be computed:
 
 $$
-\frac{\partial l(\gamma,\beta;y)}{\partial \gamma}  =  \frac{n}{\gamma}  -  n\log(\beta)  +  \sum_{i=1}^n\log(y_i/\beta)^\gamma   \\
-\frac{\partial l(\gamma,\beta;y)}{\partial \beta} = \frac{n\gamma}{\beta}  -  \frac{\gamma}{\beta} \sum_{i=1}^ny^i/\beta
+\frac{\partial l(\gamma,\beta;y)}{\partial \gamma} = \frac{n}{\gamma} - n\log(\beta)  +  \sum_{i=1}^n \log \left( \frac{y_i}{\beta}\right) \left( \frac{y_i}{\beta} \right)^\gamma \\
+\frac{\partial l(\gamma,\beta;y)}{\partial \beta} = -\frac{n\gamma}{\beta} + \frac{\gamma}{\beta} \sum_{i=1}^n \left(\frac{y^i}{\beta}\right)^\gamma
 $$
-Now it is possible to compute second-order derivatives, which constitutes the elements of the $J$ matrix. Again to compute this expressions the (a) and (b) identities are used.
+
+Now it is possible to compute second-order derivatives:
 
 1. $\partial_{\gamma\gamma}^2$ term:
 
 $$
-\frac{\partial^2 l(\gamma,\beta;y)}{\partial\gamma^2}  =  -\frac{n}{\gamma^2}  +  \sum_{i=1}^n \left( \frac{y_i}{\beta} \right)^\gamma \log\left( \frac{y_i}{\beta} \right)^2
+\frac{\partial^2 l(\gamma,\beta;y)}{\partial\gamma^2} = -\frac{n}{\gamma^2} - \sum_{i=1}^n \left( \frac{y_i}{\beta} \right)^\gamma \log\left( \frac{y_i}{\beta} \right)^2
 $$
 
-2. $\partial_{\gamma\beta}^2$ term:
+2. $\partial_{\gamma\beta}^2 = \partial_{\beta\gamma}^2$ term:
 
 $$
-\frac{\partial^2 l(\gamma,\beta;y)}{\partial\gamma\partial\beta}  =  \frac{1}{\beta} \left[ n  +  \sum_{i=1}^n \left( \frac{y_i}{\beta} \right)^\gamma  +  \gamma\sum_{i=1}^n \left( \frac{y_i}{\beta} \right)^\gamma \log \frac{y_i}{\beta} \right]
+\begin{align*}
+\frac{\partial^2 l(\gamma,\beta;y)}{\partial\gamma\partial\beta} &= - \frac{n}{\beta} - \left( -\frac 1\beta \right) \sum_{i=1}^n \left( \frac{y_i}{\beta} \right)^\gamma - \left( -\frac{\gamma}{\beta} \right) \sum_{i=1}^n \left( \frac{y_i}{\beta} \right)^\gamma \log \left( \frac{y_i}{\beta} \right) \\
+&= - \frac{n}{\beta} + \frac 1\beta \left( 1 + \gamma \log \left( \frac{y_i}{\beta} \right) \right) \sum_{i=1}^n \left( \frac{y_i}{\beta} \right)^\gamma
+\end{align*}
 $$
 
-3. $\partial_{\beta\gamma}^2$ term:
+3. $\partial_{\beta\beta}^2$ term:
 
 $$
-\frac{\partial^2 l(\gamma,\beta;y)}{\partial\beta\partial\gamma}  =  -\frac{n}{\beta}  +  \sum_{i=1}^n \left( \frac{y_i}{\beta} \right)^{\gamma-1}  -  \frac{\gamma}{\beta}\sum_{i=1}^n \left( \frac{y_i}{\beta} \right)^\gamma \log \frac{y_i}{\beta}
+\begin{align*}
+\frac{\partial^2 l(\gamma,\beta;y)}{\partial\beta^2} &= \frac{n\gamma}{\beta^2} - \frac{\gamma}{\beta^2} \sum_{i=1}^n \left( \frac{y_i}{\beta} \right)^\gamma - \frac{\gamma^2}{\beta^2} \sum_{i=1}^n \left( \frac{y_i}{\beta} \right)^\gamma \\
+&= \frac{n\gamma}{\beta^2} - \frac{\gamma (\gamma + 1)}{\beta^2} \sum_{i=1}^n \left( \frac{y_i}{\beta} \right)^\gamma
+\end{align*}
 $$
 
-4. $\partial_{\beta\beta}^2$ term:
+So we have that the elements of the $J$ matrix are:
 
 $$
-\frac{\partial^2 l(\gamma,\beta;y)}{\partial\beta^2}  =  -\frac{n\gamma}{\beta^2}  +  \gamma(\gamma+1)\beta^{-\gamma-2} \sum_{i=1}^ny_i^\gamma
+\begin{align*}
+J(\gamma, \gamma; y) &= -\frac{\partial^2 l(\gamma, \beta; y)}{\partial\gamma^2} =  \frac{n}{\gamma^2}  +  \sum_{i=1}^n \left( \frac{y_i}{\beta} \right)^\gamma \log\left( \frac{y_i}{\beta} \right)^2 \\
+J(\gamma, \beta; y) &= -\frac{\partial^2 l(\gamma,\beta;y)}{\partial\gamma\partial\beta} = \frac{n}{\beta}  -  \frac 1\beta \left( 1 + \gamma \log \left( \frac{y_i}{\beta} \right) \right) \sum_{i=1}^n \left( \frac{y_i}{\beta} \right)^\gamma \\
+J(\beta, \beta; y) &= - \frac{\partial^2 l(\gamma,\beta;y)}{\partial\beta^2}   = - \frac{n\gamma}{\beta^2} + \frac{\gamma (\gamma + 1)}{\beta^2} \sum_{i=1}^n \left( \frac{y_i}{\beta} \right)^\gamma
+\end{align*}
 $$
 
 
