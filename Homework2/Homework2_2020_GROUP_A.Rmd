@@ -3,13 +3,13 @@ title: "Homework_2"
 #author: Angela Carraro
 date: "29/04/2020"
 output:
-  rmdformats::readthedown:
   html_document:
     highlight: kate
     lightbox: true
     gallery: true
     toc: yes
     toc_depth: 3
+  rmdformats::readthedown:
   beamer_presentation:
     highlight: kate
   include: null
@@ -246,8 +246,7 @@ Markov <- function (N=100, initial.value=1, P)
 #calculation of the proportions
 c <- Markov(1000, 2, P)
 b <- vector("numeric", 3)
-for (i in 0:2){
-  b[i+1] <-sum(c==i)/length(c)}
+b <- as.vector(table(c))/length(c)
 b
 ```
 
@@ -309,7 +308,7 @@ for(i in 1:4) {
 }
 ```
 
-We can see that in the $\mathsf{acf}$ plot for $\mathsf{y1}$ there is no correlation: in the plots the lineas are always under the horizontal blue lines. Instead,  in the $\mathsf{acf}$ plot for $\mathsf{y}$ the values sometimes are above or really near the blue lines.
+We can see that in the $\mathsf{acf}$ plot for $\mathsf{y1}$ there is no correlation: in the plots the lineas are always under the horizontal blue lines. Instead,  in the $\mathsf{acf}$ plot for $\mathsf{y}$ the values sometimes are above or really near the blue lines, particullary the second line, denoting a clear sign of pattern.
 
 ### Chapter 4, Exercise 7
 
@@ -469,15 +468,11 @@ set.seed(0); n <- 1000
 A <- matrix(runif(n*n), n, n);
 x.true <- runif(n)
 y <- A %*% x.true  
-#solve(A, y)  #cerco x che risolva l'equazione
 ```
 
 b. Let's solve the inverse by using the function `solve(A)` and let's compute how long it takes throught the function `system.time`.
 
 ```{r}
-set.seed(0); n <- 1000
-A <- matrix(runif(n*n),n,n); x.true <- runif(n)
-x.true <- runif(n)
 Ainv <- solve(A) 
 x1 <- Ainv %*% y
 mad(x.true, x1)
@@ -488,8 +483,6 @@ c. We use `solve` to directly solve for $\mathbf{x}$ without forming $\mathbf{A}
 
 ```{r}
 set.seed(0); n <- 1000
-A <- matrix(runif(n*n), n, n);
-x.true <- runif(n)
 x2 <- solve(A, y)
 mad(x.true, x2)
 system.time(solve(A, y), gcFirst=TRUE)
@@ -702,6 +695,12 @@ Compute analitically $J(\gamma, \gamma; y)$, $J(\gamma, \beta; y)$, $J(\beta, \b
 
 **Solution.**
 
+First of all, let's recall the definition of the $J$ matrix. Given a certain model with likelihood $l(\theta; y)$ with data $y$ and parameters set $\theta$, $J(\theta; y)$ is defined as follows:
+
+$$
+J(\theta;y)  =  -\frac{\partial^2 l(\theta;y)}{\partial\theta \partial\theta^T}
+$$
+
 Since $J$ matrix must be derived from the log-likelihood, let's remember its expression:
 
 $$
@@ -729,16 +728,19 @@ Now it is possible to compute second-order derivatives, which constitutes the el
 $$
 \frac{\partial^2 l(\gamma,\beta;y)}{\partial\gamma^2}  =  -\frac{n}{\gamma^2}  +  \sum_{i=1}^n \left( \frac{y_i}{\beta} \right)^\gamma \log\left( \frac{y_i}{\beta} \right)^2
 $$
+
 2. $\partial_{\gamma\beta}^2$ term:
 
 $$
 \frac{\partial^2 l(\gamma,\beta;y)}{\partial\gamma\partial\beta}  =  \frac{1}{\beta} \left[ n  +  \sum_{i=1}^n \left( \frac{y_i}{\beta} \right)^\gamma  +  \gamma\sum_{i=1}^n \left( \frac{y_i}{\beta} \right)^\gamma \log \frac{y_i}{\beta} \right]
 $$
+
 3. $\partial_{\beta\gamma}^2$ term:
 
 $$
 \frac{\partial^2 l(\gamma,\beta;y)}{\partial\beta\partial\gamma}  =  -\frac{n}{\beta}  +  \sum_{i=1}^n \left( \frac{y_i}{\beta} \right)^{\gamma-1}  -  \frac{\gamma}{\beta}\sum_{i=1}^n \left( \frac{y_i}{\beta} \right)^\gamma \log \frac{y_i}{\beta}
 $$
+
 4. $\partial_{\beta\beta}^2$ term:
 
 $$
