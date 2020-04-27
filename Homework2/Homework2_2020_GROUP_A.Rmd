@@ -333,7 +333,7 @@ Put the calculation in a loop that repeats 25 times. Calculate the mean and vari
 
 **Solution.**
 
-The base implementation of the function is very easy. The point is that this function will be applied several times (passing its input from a matrix). In order to avoid unnecessary loops, before use the function it is neccessary to vectorize it. Vectorized function has been saved with the name $\mathsf{norm\_sample\_general(n)}$ where $\mathsf{n}$ is the number of samples to generate. It is run by setting 51 samples and 25 repetitions and then results are saved on $\mathsf{y}$ matrix.
+The base implementation of the function is very easy. The point is that this function will be applied several times (passing its input from a matrix). In order to avoid unnecessary loops, before using the function it is neccessary to vectorize it. The vectorized function has been saved with the name $\mathsf{norm\_sample\_general(n)}$ where $\mathsf{n}$ is the number of samples to generate. It is run by setting 51 samples and 25 repetitions and then results are saved on $\mathsf{y}$ matrix.
 
 ```{r DAAG4.7_1, echo=TRUE}
 #function to get n samples
@@ -447,7 +447,7 @@ identical(zneg2, zneg)
 ```
 
 
-## Exercise 3.5
+### Exercise 3.5
 
 Consider solving the matrix equation $\mathbf{Ax}=\mathbf{y}$ for $\mathbf{x}$, where $\mathbf{y}$ is a known $n \times n$ matrix. The formal solution to the problem is $\mathbf{x}= \mathbf{A}^{-1} \mathbf{y}$, but it is possible to solve the equation directly, without actually forming $\mathbf{A}^{-1}$. This question explores this direct solution. Read the help file for `solve` before trying it.
 
@@ -533,11 +533,11 @@ curve((n/sigma^2) * dchisq(x * (n/sigma^2), df = n - 1),
       add = TRUE, col = "blue", lwd = 2)
 ```
 
-We can see that $s^2_b$ is a biased estimator for the variance because its mean is lower than 1, in fact
+We can see that $s^2_b$ is a biased estimator for the variance because its curve is not centered on $1$: it is slightly farther.
 
 ```{r}
-m <- mean(v)
-m
+#m <- mean(v)
+#m
 var_b <- c()
 for(i in 1:R) {
   var_b[i] <- sum(samples[i, ])**2/n
@@ -558,7 +558,7 @@ curve(((n-1)/sigma^2) * dchisq(x * ((n-1)/sigma^2), df = n - 1),
 legend("topright", legend = c(expression(s^2), expression({s^2}[b])), col = c("red", "blue"), lty = 1)
 ```
 
-We can see that the blue curve of $s^2_b$ is more shifted to the left with respect to the red curve of $s^2$. In the end $s^2$, being unbiased, shold be preferred.
+We can see that the blue curve of $s^2_b$ is more shifted to the left with respect to the red curve of $s^2$, which in average seems closer to the true value of the variance. In the end $s^2$, being unbiased, should be preferred.
 
 
 ### Exercise 2
@@ -671,9 +671,9 @@ pvalue <- pt(t, df=n-2, lower.tail = TRUE)
 pvalue
 ```
 
-The resulting $p$-value is greater than $0.05$, so null hypothesis, in this case $\rho=0$, should be accepted. It means that in terms of the test, there is no sufficient significance to assume any association between the number of followers on Twitter and Instagram. Note that it does not implies that this correlation does not exist, it simply establish the fact that, according to the test, it cannot be confirmed that it exists any correlation, also if it is the case.
+The resulting $p$-value is greater than $0.05$, so null hypothesis, in this case $\rho=0$, should be accepted. It means that in terms of the test, there is no sufficient significance to assume any association between the number of followers on Twitter and Instagram. Note that it does not imply that this correlation does not exist, it simply establishes the fact that, according to the test, it cannot be confirmed that there exists any correlation, also if it is the case.
 
-The situation can also be shown on a graph:
+The situation can also be shown with a graph:
 
 ```{r lab3_plot, echo=TRUE}
 #plot
@@ -704,7 +704,7 @@ Compute analitically $J(\gamma, \gamma; y)$, $J(\gamma, \beta; y)$, $J(\beta, \b
 
 **Solution.**
 
-First of all, let's recall the definition of the $J$ matrix. Given a certain model with likelihood $l(\theta; y)$ with data $y$ and parameters set $\theta$, $J(\theta; y)$ is defined as follows:
+First of all, let's recall the definition of the $J$ matrix. Given a certain model with likelihood $l(\theta; y)$ with data $y$ and parameters set $\theta$, $J(\theta; y)$ it is defined as follows:
 
 $$
 J(\theta;y)  =  -\frac{\partial^2 l(\theta;y)}{\partial\theta \partial\theta^T}
