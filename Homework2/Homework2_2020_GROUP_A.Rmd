@@ -706,8 +706,8 @@ $$
 As $J$ matrix is defined by using the second-order derivatives on model's parameters, previously first-order derivatives must be computed:
 
 $$
-\frac{\partial l(\gamma,\beta;y)}{\partial \gamma} = \frac{n}{\gamma} - n\log(\beta)  +  \sum_{i=1}^n \log \left( \frac{y_i}{\beta}\right) \left( \frac{y_i}{\beta} \right)^\gamma \\
-\frac{\partial l(\gamma,\beta;y)}{\partial \beta} = -\frac{n\gamma}{\beta} + \frac{\gamma}{\beta} \sum_{i=1}^n \left(\frac{y^i}{\beta}\right)^\gamma
+\frac{\partial l(\gamma,\beta;y)}{\partial \gamma} = \frac{n}{\gamma} - n\log(\beta) + \sum_{i=1}^n \log(y_i) + \sum_{i=1}^n \left( \frac{y_i}{\beta} \right)^\gamma \log \left( \frac{y_i}{\beta}\right) \\
+\frac{\partial l(\gamma,\beta;y)}{\partial \beta} = -\frac{n\gamma}{\beta} + \frac{\gamma}{\beta} \sum_{i=1}^n \left(\frac{y_i}{\beta}\right)^\gamma
 $$
 
 Now it is possible to compute second-order derivatives:
