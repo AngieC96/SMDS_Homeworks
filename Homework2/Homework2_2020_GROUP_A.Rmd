@@ -533,19 +533,6 @@ curve((n/sigma^2) * dchisq(x * (n/sigma^2), df = n - 1),
       add = TRUE, col = "blue", lwd = 2)
 ```
 
-We can see that $s^2_b$ is a biased estimator for the variance because its curve is not centered on $1$: it is slightly farther.
-
-```{r}
-#m <- mean(v)
-#m
-var_b <- c()
-for(i in 1:R) {
-  var_b[i] <- sum(samples[i, ])**2/n
-}
-m_b <- mean(var_b)
-m_b
-```
-
 We compare $s_b^2$ and $s^2$:
 
 ```{r, echo=TRUE}
@@ -558,7 +545,7 @@ curve(((n-1)/sigma^2) * dchisq(x * ((n-1)/sigma^2), df = n - 1),
 legend("topright", legend = c(expression(s^2), expression({s^2}[b])), col = c("red", "blue"), lty = 1)
 ```
 
-We can see that the blue curve of $s^2_b$ is more shifted to the left with respect to the red curve of $s^2$, which in average seems closer to the true value of the variance. In the end $s^2$, being unbiased, should be preferred.
+We can see that the blue curve of $s^2_b$ is more shifted to the left with respect to the red curve of $s^2$, which in average seems closer to the true value of the variance. We can see that $s^2_b$ is a biased estimator for the variance because its curve is not centered on $1$: it is slightly farther. In the end $s^2$, being unbiased, should be preferred.
 
 
 ### Exercise 2
