@@ -723,7 +723,7 @@ $$
 $$
 \begin{align*}
 \frac{\partial^2 l(\gamma,\beta;y)}{\partial\gamma\partial\beta} &= - \frac{n}{\beta} - \left( -\frac 1\beta \right) \sum_{i=1}^n \left( \frac{y_i}{\beta} \right)^\gamma - \left( -\frac{\gamma}{\beta} \right) \sum_{i=1}^n \left( \frac{y_i}{\beta} \right)^\gamma \log \left( \frac{y_i}{\beta} \right) \\
-&= - \frac{n}{\beta} + \frac 1\beta \left( 1 + \gamma \log \left( \frac{y_i}{\beta} \right) \right) \sum_{i=1}^n \left( \frac{y_i}{\beta} \right)^\gamma
+&= - \frac{n}{\beta} + \frac 1\beta \sum_{i=1}^n \left( 1 + \gamma \log \left( \frac{y_i}{\beta} \right) \right) \left( \frac{y_i}{\beta} \right)^\gamma
 \end{align*}
 $$
 
@@ -741,7 +741,7 @@ So we have that the elements of the $J$ matrix are:
 $$
 \begin{align*}
 J(\gamma, \gamma; y) &= -\frac{\partial^2 l(\gamma, \beta; y)}{\partial\gamma^2} =  \frac{n}{\gamma^2}  +  \sum_{i=1}^n \left( \frac{y_i}{\beta} \right)^\gamma \log\left( \frac{y_i}{\beta} \right)^2 \\
-J(\gamma, \beta; y) &= -\frac{\partial^2 l(\gamma,\beta;y)}{\partial\gamma\partial\beta} = \frac{n}{\beta}  -  \frac 1\beta \left( 1 + \gamma \log \left( \frac{y_i}{\beta} \right) \right) \sum_{i=1}^n \left( \frac{y_i}{\beta} \right)^\gamma \\
+J(\gamma, \beta; y) &= -\frac{\partial^2 l(\gamma,\beta;y)}{\partial\gamma\partial\beta} = \frac{n}{\beta}  -  \frac 1\beta \sum_{i=1}^n \left( 1 + \gamma \log \left( \frac{y_i}{\beta} \right) \right) \left( \frac{y_i}{\beta} \right)^\gamma \\
 J(\beta, \beta; y) &= - \frac{\partial^2 l(\gamma,\beta;y)}{\partial\beta^2}   = - \frac{n\gamma}{\beta^2} + \frac{\gamma (\gamma + 1)}{\beta^2} \sum_{i=1}^n \left( \frac{y_i}{\beta} \right)^\gamma
 \end{align*}
 $$
