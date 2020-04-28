@@ -266,7 +266,7 @@ b. We try varying the number of simulations and the width of the window:
 library(zoo)
 library(lattice)
 
-plotmarkov <- function(n=10000, start=0, window=100, transition=P, npanels=5){
+plotmarkov <- function(n=100000, start=0, window=500, transition=P, npanels=5){
     xc2 <- Markov(n, start, transition)
     mav0 <- rollmean(as.integer(xc2==0), window)
     mav1 <- rollmean(as.integer(xc2==0), window)
@@ -280,11 +280,20 @@ plotmarkov <- function(n=10000, start=0, window=100, transition=P, npanels=5){
 plotmarkov()
 ```
 
+In the context of the so-called "rolling mean", it is made a mean over the $\mathsf{window}$ previous parameters for each sample. Since in this case the mean is the proportion of states 0 within the window, it can be seen as a sort of local density of states 0. When the Markov chain converges, states evolves according to a stationary distribution with a certain "periodicity" (random fluctuations will have a certain order of magnitude). Actually this can be more complicated as there can be fluctiations with different orders of magnitude overlaping and displayed on a complicated spectrum of frequencies, further to being monocromatic. For this reason, it is important to find out an adeguate ratio among  $\mathsf{window}$ and $\mathsf{n}$ parameters. For instance, by setting incorrect values for $\mathsf{n}$ and $\mathsf{window}$, it cannot be observed other than noise (see previous plot). However, by setting a gool balance it boils down to the observance of the convergence.
+
 ```{r}
-plotmarkov(n=1000000, window=10000)
+plotmarkov(n=200000, window=20000)
 ```
 
-==CONCLUSIONS!!!!!!==
+In this case, it can be seen clearly that, in the beginning, the curve has much more oscilance while near to the ending it comes more stable. Let's try to reduce the window in one order of magnitude:
+
+```{r}
+plotmarkov(n=200000, window=2000)
+```
+
+The plot is completely different, nevertheless, in the ending zone, oscilations have lower amplitude respect to the beginning, indicating again that there is some convergence. The main conclussion to this little experiment is that the chain convergence (using this kind of plot) can be observed despite its strong dependence on the setting of the parameters. It can be complicated to set up this parameters without any previous knowledge about them. A way to deal with this problem could be to perform previously some king of spectral decomposition in order to obtain the most dominant frequencies. Then set the parameter $\mathsf{window}$ according to the period associated to these frequencies.
+
 
 
 ### Chapter 4, Exercise 6
