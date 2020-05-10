@@ -1,0 +1,232 @@
+---
+title: "Homework_3"
+#author: Angela Carraro
+date: "13/05/2020"
+output:
+  rmdformats::readthedown:
+  html_document:
+    highlight: kate
+    lightbox: true
+    gallery: true
+    toc: yes
+    toc_depth: 3
+  beamer_presentation:
+    highlight: kate
+  include: null
+  ioslides_presentation:
+    highlight: kate
+  pdf_document:
+    highlight: kate
+    keep_tex: yes
+    toc: yes
+  slide_level: 2
+  slidy_presentation:
+    fig.height: 3
+    fig.width: 4
+    highlight: kate
+header-includes:
+- \usepackage{color}
+- \definecolor{Purple}{HTML}{911146}
+- \definecolor{Orange}{HTML}{CF4A30}
+- \setbeamercolor{alerted text}{fg=Orange}
+- \setbeamercolor{frametitle}{bg=Purple}
+institute: University of Udine & University of Trieste
+graphics: yes
+fontsize: 10pt
+---
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(fig.align = 'center', warning=FALSE, message=FALSE, fig.asp=0.625, dev='png', global.par = TRUE, dev.args=list(pointsize=10), fig.path = 'figs/')
+```
+```{r setup, include=FALSE}
+library(knitr)
+local({
+  hook_plot = knit_hooks$get('plot')
+  knit_hooks$set(plot = function(x, options) {
+    paste0('\n\n----\n\n', hook_plot(x, options))
+  })
+})
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+**Group A: Fernandez Santisteban, Marvulli, Spagnolo, Carraro**
+
+```{r message=FALSE}
+library(MASS)
+library(DAAG)
+```
+
+## LEC Exercises
+
+
+## LAB Exercises
+
+Exercises 1, 2, 3, 5, 6, 7, 8, 9, 10 (from Lab 3).
+
+### Exercise 1
+
+
+**Solution.**
+
+
+### Exercise 9
+
+Reproduce the first plot above for the soccer goals, but this time by replacing Prior 1 with a $Gamma(2,4)$. Then, compute the final Bayes factor matrix (`BF_matrix`) with this new prior and the other ones unchanged, and comment. Is still Prior 2 favorable over all the others?
+
+**Solution.**
+
+We replace Prior 1 with a $Gamma(2,4)$
+
+```{r}
+library(LearnBayes)
+data(soccergoals)
+
+y <- soccergoals$goals
+
+#write the likelihood function via the gamma distribution
+lik_pois<- function(data, theta){
+  n <- length(data)
+  lambda <- exp(theta)
+  dgamma(lambda, shape =sum(data)+1, scale=1/n)
+}
+
+ prior_gamma <- function(par, theta){
+  lambda <- exp(theta)
+  dgamma(lambda, par[1], rate=par[2])*lambda  
+}
+
+ prior_norm <- function(npar, theta){
+ lambda=exp(theta)  
+ (dnorm(theta, npar[1], npar[2]))
+  
+}
+
+lik_pois_v <- Vectorize(lik_pois, "theta")
+prior_gamma_v <- Vectorize(prior_gamma, "theta")
+prior_norm_v <- Vectorize(prior_norm, "theta")
+
+
+#likelihood
+ curve(lik_pois_v(theta=x, data=y), xlim=c(-4,4), xlab=expression(theta), ylab = "density", lwd =2 )
+#prior 1
+ curve(prior_gamma_v(theta=x, par=c(2, 4)), lty =2, col="red", add = TRUE, lwd =2)
+#prior 2 
+ curve(prior_norm_v(theta=x, npar=c(1, .5)), lty =3, col="blue", add =TRUE, lwd=2)
+#prior 3 
+ curve(prior_norm_v(theta=x, npar=c(2, .5)), lty =4, col="green", add =TRUE, lwd =2)
+#prior 4 
+  curve(prior_norm_v(theta=x, npar=c(1, 2)), lty =5, col="violet", add =TRUE, lwd =2)
+  legend(2, 1.8, c("Lik.", "Ga(2,4)", "N(1, 0.25)", "N(2,0.25)","N(1, 4)" ),
+  lty=c(1,2,3,4,5), col=c("black", "red", "blue", "green", "violet"),lwd=2, cex=0.9)
+```
+
+We compute the final Bayes factor matrix with this new prior and the other ones unchanged.
+
+```{r}
+logpoissongamma <- function(theta, datapar){
+   data <- datapar$data
+   par <- datapar$par
+   lambda <- exp(theta)
+   log_lik <- log(lik_pois(data, theta))
+   log_prior <- log(prior_gamma(par, theta))
+   return(log_lik+log_prior)
+}
+
+logpoissongamma.v <- Vectorize( logpoissongamma, "theta")
+
+
+logpoissonnormal <- function( theta, datapar){
+ data <- datapar$data
+ npar <- datapar$par
+ lambda <- exp(theta)
+ log_lik <- log(lik_pois(data, theta))
+ log_prior <- log(prior_norm(npar, theta))
+  return(log_lik+log_prior)
+}  
+logpoissonnormal.v <- Vectorize( logpoissonnormal, "theta")
+
+#log-likelihood
+curve(log(lik_pois(y, theta=x)), xlim=c(-1,2.6), ylim=c(-20,2), lty =1, ylab="log-posteriors",
+      xlab=expression(theta))
+#log posterior 1
+curve(logpoissongamma.v(theta=x, list(data=y, par=c(2, 4))), col="red", lty =1, add =TRUE)
+#log posterior 2
+curve(logpoissonnormal.v( theta=x, datapar <- list(data=y, par=c(1, .5))), lty =1, col="blue",
+      add =TRUE)
+#log posterior 3
+curve(logpoissonnormal.v( theta=x, datapar <- list(data=y, par=c(2, .5))), lty =1, col="green",
+      add =TRUE, lwd =2)
+#log posterior 4
+curve(logpoissonnormal.v( theta=x, list(data=y, par=c(1, 2))), lty =1, col="violet",
+      add =TRUE, lwd =2)
+legend(2, 1.3, c( "loglik", "lpost 1", "lpost 2", "lpost 3", "lpost 4" ), lty=1,
+       col=c("black", "red", "blue", "green", "violet"),lwd=2, cex=0.9)
+```
+
+We can see that Prior 1 is still the better one, while our new Prior 1 is much worse than the previous one we chose, $Gamma(4.57, 1.43)$.
+
+```{r}
+datapar <- list(data=y, par=c(4.57, 1.43))
+fit1 <- laplace(logpoissongamma, .5, datapar)
+datapar <- list(data=y, par=c(1, .5))
+fit2 <- laplace(logpoissonnormal, .5, datapar)
+datapar <- list(data=y, par=c(2, .5))
+fit3 <- laplace(logpoissonnormal, .5, datapar)
+datapar <- list(data=y, par=c(1, 2))
+fit4 <- laplace(logpoissonnormal, .5, datapar)
+
+postmode <- c(fit1$mode, fit2$mode, fit3$mode, fit4$mode )
+postsds <- sqrt(c(fit1$var, fit2$var, fit3$var, fit4$var))
+logmarg <- c(fit1$int, fit2$int, fit3$int, fit4$int)
+cbind(postmode, postsds, logmarg)
+
+BF_matrix <- matrix(1, 4,4)
+for (i in 1:3){
+  for (j in 2:4){
+   BF_matrix[i,j]<- exp(logmarg[i]-logmarg[j])
+   BF_matrix[j,i]=(1/BF_matrix[i,j]) 
+  }
+}
+
+round_bf <- round(BF_matrix,3)
+round_bf
+```
+
+Since the second row of the `BF_matrix` has always a value bigger than $1$ we can say that the Prior 2 is still preferable over all the others. The new Prior 1 we used is worse than Prior 2 (since the cell `[1, 2]` is less than $1$), but is better than Prior 3 and Prior 4 (since the cells `[1, 3]` and `[1, 4]` are greater than $1$).
+
+
+### Exercise 10
+
+Let $y=(1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0)$ collect the results of tossing $n=14$ times an unfair coin, where $1$ denotes heads and $0$ tails, and $p=Prob(y_i=1)$.
+
+- Looking at the `Stan` code for the other models, write a short `Stan` Beta-Binomial model, where $p$ has a $Beta(a, b)$ prior with $a=3$, $b=3$.
+  
+- Extract the posterior distribution with the function `extract()`;
+
+- Produce some plots with the `bayesplot` package and comment.
+
+- Compute analitically the posterior distribution and compare it with the `Stan` distribution.
+
+**Solution.**
+
+- The `Stan` Beta-Binomial model is:
+
+```{r}
+y <- c(1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0)
+n <- 14
+
+library(rstan)
+#launch Stan model
+data <- list(N=n, y=y, a = 3, b = 3)
+fit <- stan(file="beta_binomial.stan", data = data, chains = 4, iter=2000)
+```
+
+- We extract the posterior distribution:
+
+```{r}
+#extract Stan output
+sim <- extract(fit)
+```
+
+
+<!-- knitr::knit("Homework1_2020_GROUP_I.Rmd", tangle = TRUE, output ="Homework1_2020_GROUP_I.R") -->

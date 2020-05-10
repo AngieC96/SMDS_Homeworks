@@ -9,6 +9,7 @@ The assigned exercises could come from different books/sources, generally we wil
 - **DAAG**: for the exercises from *[Data Analysis and Graphics Using R](http://www.pindex.com/uploads/post_docs/Maindonald%20Data%20Analysis%20and%20Graphics(PINDEX-DOC-6953).pdf)*, by John Maindonald and W.John Braun.
 - **CS**: for the exercises from *[Core Statistics](https://people.maths.bris.ac.uk/~sw15190/core-statistics.pdf)*, by Simon N. Wood.
 - **LAB**: for the exercises contained in the [laboratory sessions](https://moodle2.units.it/course/view.php?id=5505) held on *Microsoft Teams*.
+- **LEC**: for the exercises from theoretical lectures.
 
 
 ## Homeworks
@@ -58,5 +59,33 @@ In this section are listed the homeworks assigned from the previously cited sour
 | Rossella Marvulli                  | 3.11      | 3.5  | 2    |
 | José Antonio Fernández Santisteban | 4.7       | -    | 3, 4 |
 | Anna Spagnolo                      | 3.13, 4.6 | -    | 1    |
+
+- **Grade:** -
+
+### Homework 3
+
+* **Due date:** Wednesday 13th May 2020
+
+* **Group:** Group E
+
+* **Members:** Leonardo Arrighi, Angela Carraro, Matilde Castelli, Arianna Tasciotti
+
+* **Exercises:**
+
+  * LEC:
+
+    1. Compute the bootstrap-based confidence interval for the 𝗌𝖼𝗈𝗋𝖾score dataset using the studentized method.
+    2. Compute bootstrap-based confidence intervals for the 𝗌𝖼𝗈𝗋𝖾score dataset using the 𝖻𝗈𝗈𝗍boot package.
+
+    (For both 1 and 2, refer to the theoretical lecture about bootstrap.)
+
+  * LAB: exercises 1, 2, 3, 5, 6, 7, 8, 9, 10 (from Lab 3).
+
+|                   | LEC  | LAB     |
+| ----------------- | ---- | ------- |
+| Leonardo Arrighi  | -    | 2, 3, 7 |
+| Angela Carraro    | -    | 9, 10   |
+| Matilde Castelli  | -    | 5, 6, 8 |
+| Arianna Tasciotti | 1, 2 | 1       |
 
 - **Grade:** -
