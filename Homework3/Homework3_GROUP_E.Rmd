@@ -1,6 +1,5 @@
 ---
 title: "Homework_3"
-#author: Angela Carraro
 date: "13/05/2020"
 output:
   rmdformats::readthedown:
@@ -37,6 +36,7 @@ fontsize: 10pt
 ```{r global_options, include=FALSE}
 knitr::opts_chunk$set(fig.align = 'center', warning=FALSE, message=FALSE, fig.asp=0.625, dev='png', global.par = TRUE, dev.args=list(pointsize=10), fig.path = 'figs/')
 ```
+
 ```{r setup, include=FALSE}
 library(knitr)
 local({
@@ -45,19 +45,122 @@ local({
     paste0('\n\n----\n\n', hook_plot(x, options))
   })
 })
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, tidy = TRUE)
 ```
 
 
-**Group A: Fernandez Santisteban, Marvulli, Spagnolo, Carraro**
+**Group E: Tasciotti, Arrighi, Castelli, Carraro**
 
 ```{r message=FALSE}
+library(bayesplot)
+library(boot)
+#library(DAAG)
+library(ggplot2)
 library(MASS)
-library(DAAG)
+library(rstan)
+library(rstanarm)
+library(LearnBayes)
 ```
 
 ## LEC Exercises
 
+### Exercise 1
+
+**Compute the bootstrap-based confidence interval for the `score` dataset using the studentized method.**  
+
+#### Solution
+
+The `score` dataset used in this exercise was taken from here https://web.stanford.edu/~hastie/CASI/data.html.
+
+```{r, echo=TRUE}
+score <- read.table("student_score.txt",header = TRUE)
+print(cor(score))
+```
+
+The parameter of interest is the $\mathsf{eigenratio}$ statistic for the above correlation matrix. Let $\lambda_i$ be the $i$-th eigenvalue of the correlation matrix. Then the $\mathsf{eigenratio}$ statistic is given by $\hat\psi= \frac{\lambda_{max}}{\sum_i \lambda_i}$.
+The studentized method requires a standard error estimate $SE(\hat{\psi}^{*})$ from each bootstrap sample and since explicit estimates of $SE(\hat{\psi}^{*})$ would be very hard, we employ the $\mathsf{jackknife}$ within each bootstrap sample.\
+Denoting by $z_{0.025}^*$ and $z_{0.975}^*$ the bootstrap quantiles of $z^{*1}, \ldots, z^{*B}$,
+where $z^{*b}=\frac{\hat\psi^{*b}-\hat\psi}{SE(\hat\psi^{*b})}$, the studentized bootstrap confidence interval is given by $$\bigg(\hat\psi-SE(\hat\psi)z_{0.975}^*,\hat\psi-SE(\hat\psi)z_{0.025}^*\bigg).$$
+
+```{r, echo=TRUE}
+# compute the eigenratio statistic
+eigenratio <- function(y) {
+  lambda <- eigen(cor(y))$values
+  return(max(lambda) / sum(lambda))
+}
+
+# psi hat
+psi_obs <- eigenratio(score)
+
+# Compute confidence intervals
+set.seed(123)
+n <- nrow(score)
+B <- 10^4
+s_stat <- rep(0,n)
+s_vect <- rep(0, B)
+SE_jack <- rep(0, B)
+
+for(i in 1:B){
+  ind <- sample(1:n, n, replace = TRUE)
+  s_vect[i] <- eigenratio(score[ind,])
+  
+  # Sample without j-th obs
+  for(j in 1:n) s_stat[j] <- eigenratio(score[ind,][-j,])
+  
+  # Jackknife estimate of the standard error
+  SE_jack[i] <- sqrt(((n - 1)/n) * sum((s_stat - mean(s_stat))^2))
+}
+
+SE_boot <- sd(s_vect)
+
+# studentized confidence intervals
+z<-(s_vect - psi_obs)/SE_jack
+studentized_ci <- psi_obs - quantile(z, prob=c(0.975, 0.025))*SE_boot
+studentized_ci
+
+hist.scott(s_vect, main = "Studentized CI")
+abline(v = psi_obs, col = 2)
+mtext(expression(psi[obs]), 1, at=psi_obs, col="red")
+abline(v=studentized_ci[1],col = 5)
+abline(v=studentized_ci[2],col = 5)
+```
+
+----------------------------------------------------------------------------------------------
+
+### Exercise 2
+
+**Compute bootstrap-based confidence intervals for the `score` dataset using the `boot` package.**
+
+#### Solution
+
+```{r, echo=TRUE}
+
+set.seed(123)
+n <- nrow(score)
+B <- 10^4
+s_stat <- rep(0, n)
+SE_jack <- rep(0, B)
+
+statistic_boot <-function(y, ind) {
+  y <- y[ind,]
+  s_vect=eigenratio(y)
+  
+  # jackknife standard error estimate
+  for (j in 1:n) s_stat[j] <- eigenratio(y[-j,])
+  SE_jack[ind] <- ((n - 1)/n) * sum((s_stat - mean(s_stat))^2)
+  
+  return(c(s_vect, SE_jack))
+}
+
+# bootstrap resampling
+score.boot <- boot(data = score, statistic = statistic_boot, R = B)
+# compute confidence intervals
+boot.ci(score.boot,type = "stud")
+```
+
+From these results we can see that the confidence intervals computed with the `boot.ci` function are slightly different from those calculated "by hand" in Exercise 1. This is probably due to some different method used by `boot.ci`.
+
+----------------------------------------------------------------------------------------------
 
 ## LAB Exercises
 
@@ -65,65 +168,482 @@ Exercises 1, 2, 3, 5, 6, 7, 8, 9, 10 (from Lab 3).
 
 ### Exercise 1
 
+**Use `nlm` to compute the variance for the estimator $\hat{w}=(log(\hat\gamma),log(\hat\beta))$ and `optimHess` for the variance of $\hat\theta=(\hat\gamma, \hat\beta)$.**
 
-**Solution.**
+#### Solution
 
+```{r, echo=TRUE}
+# data
+y <- c(155.9, 200.2, 143.8, 150.1,152.1, 142.2, 147, 146, 146,
+ 170.3, 148, 140, 118, 144, 97)
+
+# log-likelihood function
+log_lik_weibull <- function(data, param){
+  -sum(dweibull(data, shape = param[1], scale = param[2], log = TRUE))
+}
+
+# reparametrization
+omega <- function(theta) log(theta)
+theta <- function(omega) exp(omega)
+log_lik_weibull_rep <- function(data, param) log_lik_weibull(data, theta(param))
+
+# numerical optimization with nlm
+weib.y.nlm<-nlm(log_lik_weibull_rep, c(0,0), hessian=T, data=y)
+weib.y.nlm
+```
+
+The output `hessian` returned by the `nlm` function is the Fisher Information Matrix $I(\hat{w})$ evaluated at $(log(\hat\gamma),log(\hat\beta))$.
+The inverse of $I(\hat{w})$ is the variance-covariance matrix $C(\hat{w})$ and the variance for the estimator $\hat{w}=(log(\hat\gamma),log(\hat\beta))$ can be computed as $$var(\hat{w_i})=C_{ii}(\hat{w}),$$ where $C_{ii}(\hat{w})$ is the $i$-th diagonal element of the variance-covariance matrix. Thus, we use the function `solve` to compute the inverse of $I(\hat{w})$ and then we apply `diag` to get the diagonal elements of the variance-covariance matrix.
+
+```{r, echo=TRUE}
+# diagonal elements of the inverse fisher information matrix
+diag(solve(weib.y.nlm$hessian))
+```
+
+Thus, the variance for the estimator $\hat{w}=(\log(\hat\gamma),\log(\hat\beta))$ is $(0.032473346,0.001582124)$.  
+
+In order to compute the variance of $\hat\theta=(\hat\gamma,\hat\beta)$, we re-express the parameters in the original scale and we pass them to the `optimHess` function which computes the hessian evaluated at $(\hat \gamma, \hat \beta)$. Then, we invert the hessian and we take the diagonal elements of the obtained matrix.
+
+```{r, echo=TRUE}
+# compute the hessian with optimHess
+hessian_theta<-optimHess(theta(weib.y.nlm$estimate),log_lik_weibull,data=y)
+
+# diagonal elements of the inverse fisher information matrix
+diag(solve(hessian_theta))
+```
+
+The variance of $\hat\theta=(\hat\gamma,\hat\beta)$ is $(1.543241,38.406118)$.
+
+----------------------------------------------------------------------------------------------
+
+### Exercise 2
+
+**The Wald confidence interval with level $1-\alpha$ is defined as: $$ \hat{\gamma} \,\pm\,z_{1-\alpha} j_P(\hat{\gamma})^{-\frac{1}{2}}. $$ Compute the Wald confidence interval of level $0.95$ and plot the results.**
+
+#### Solution
+
+```{r, echo=TRUE}
+# data
+y <- c(155.9, 200.2, 143.8, 150.1,152.1, 142.2, 147, 146, 146,
+       170.3, 148, 140, 118, 144, 97)
+
+
+# functions
+log_lik_weibull <- function( data, param){
+    -sum(dweibull(data, shape = param[1], scale = param[2], log = TRUE))
+}
+
+log_lik_weibull_profile <- function(data, gamma){
+    beta.gamma <- mean(data^gamma)^(1/gamma)
+    log_lik_weibull( data, c(gamma, beta.gamma) )
+}
+
+log_lik_weibull_profile_v <- Vectorize(log_lik_weibull_profile, 'gamma')
+
+
+# compute MLE with an optimization method
+weib.y.mle<-optim(1,fn=log_lik_weibull_profile,hessian=T,
+                  method='L-BFGS-B',lower=rep(1e-7,2),
+                  upper=rep(Inf,2),data=y)
+weib.y.mle
+
+
+# compute standard error
+se<-sqrt(diag(solve(weib.y.mle$hessian)))
+se
+
+
+# compute bounds of confidence interval with level 0.95
+conf_level<-0.95
+wald.ci<-weib.y.mle$par[1]+c(-1,1)*qnorm(1-(1-conf_level)/2)*se[1]
+wald.ci
+
+
+# plot
+plot(function(x) -log_lik_weibull_profile_v(data=y, x)+weib.y.mle$value,
+     from=0.1,to=15,xlab=expression(gamma),
+     ylab='profile relative log likelihood',ylim=c(-8,0))
+
+segments(wald.ci[1], -log_lik_weibull_profile_v(y,wald.ci[1])+weib.y.mle$value,
+         wald.ci[1], -log_lik_weibull_profile_v(y, wald.ci[1]),
+         col="red", lty=2)
+segments(wald.ci[2], -log_lik_weibull_profile_v(y,wald.ci[2])+weib.y.mle$value,
+         wald.ci[2], -log_lik_weibull_profile_v(y, wald.ci[2]),
+         col="red", lty=2 )
+points(wald.ci[1], -log_lik_weibull_profile_v(y,wald.ci[1])+weib.y.mle$value, pch=16, col=2, cex=1.5)
+points(wald.ci[2], -log_lik_weibull_profile_v(y,wald.ci[2])+weib.y.mle$value, pch=16, col=2, cex=1.5)
+segments(wald.ci[1], -8,  wald.ci[2], -8, col="red", lty =1, lwd=2)
+abline(v=weib.y.mle$par[1], col=4, lwd=1, lty=2)
+text(6.8, -2, expression(gamma[mle]), col=4)
+text(7,-7.5,"95% Wald CI",col="red")
+```
+
+----------------------------------------------------------------------------------------------
+
+### Exercise 3
+
+**Repeat the steps above - write the profile log-likelihood, plot it and find the deviance confidence intervals - considering this time $\gamma$ as a nuisance parameter and $\beta$ as the parameter of interest.**
+
+#### Solution
+
+```{r, echo=TRUE}
+# data
+y <- c(155.9, 200.2, 143.8, 150.1,152.1, 142.2, 147, 146, 146,
+       170.3, 148, 140, 118, 144, 97)
+n <- length(y)
+
+beta <- seq(100,200, length=100)
+
+
+# functions
+log_lik_weibull <- function( data, param){
+    -sum(dweibull(data, shape = param[1], scale = param[2], log = TRUE))
+}
+
+log_lik_weibull_profile <- function(data, beta) {
+    gamma.beta <- uniroot(function(x) n/x - n * log(beta) + sum(log(data)) - sum((data/beta)^x * log(data/beta)), 
+                          c(1e-5,15))$root
+    log_lik_weibull(data, c(gamma.beta, beta))
+}
+
+log_lik_weibull_profile_v <- Vectorize(log_lik_weibull_profile, 'beta')
+
+
+# compute MLE with an optimization method
+weib.y.mle<-optim(c(1,1),fn=log_lik_weibull,hessian=T,
+                  method='L-BFGS-B',lower=rep(1e-7,2),
+                  upper=rep(Inf,2),data=y)
+weib.y.mle
+
+
+# plot
+plot(function(x) -log_lik_weibull_profile_v(data=y, x) + weib.y.mle$value, from=120,to=200, xlab=expression(beta),
+     ylab='profile relative log likelihood', ylim=c(-9,0))
+
+conf.level<-0.95
+abline(h=-qchisq(conf.level,1)/2,lty='dashed',col=2)
+
+lrt.ci1<-uniroot(function(x) -log_lik_weibull_profile_v(y, x)+
+                     weib.y.mle$value+
+                     qchisq(conf.level,1)/2,
+                 c(1e-7,weib.y.mle$par[2]))$root
+
+lrt.ci1<-c(lrt.ci1,uniroot(function(x) -log_lik_weibull_profile_v(y,x)+
+                               weib.y.mle$value+
+                               qchisq(conf.level,1)/2,
+                           c(weib.y.mle$par[2],200))$root)
+
+segments( lrt.ci1[1],-qchisq(conf.level,1)/2, lrt.ci1[1],
+          -log_lik_weibull_profile_v(y, lrt.ci1[1]), col="red", lty=2  )
+
+segments( lrt.ci1[2],-qchisq(conf.level,1)/2, lrt.ci1[2],
+          -log_lik_weibull_profile_v(y, lrt.ci1[2]), col="red", lty=2  )
+
+points(lrt.ci1[1], -qchisq(0.95,1)/2, pch=16, col=2, cex=1.5)
+points(lrt.ci1[2], -qchisq(0.95,1)/2, pch=16, col=2, cex=1.5)
+segments( lrt.ci1[1],
+          -8.1, lrt.ci1[2],
+          -8.1, col="red", lty =1, lwd=2  )
+abline(v=weib.y.mle$par[2], col=4, lwd=1, lty=2)
+text(156.5, -1.6, expression(beta[mle]), col=4)
+text(156,-7.5,"95% Deviance CI",col=2)
+```
+
+----------------------------------------------------------------------------------------------
+
+### Exercise 5
+
+**In `sim` in the code above, you find the MCMC output which allows to approximate the posterior distribution of our parameter of interest with $S$ draws of $\theta$. Please, produce an histogram for these random draws $\theta(1), \ldots, \theta(S)$, compute the empirical quantiles, and overlap the true posterior distribution.**
+
+#### Solution
+
+```{r}
+#--------- input variables ---------------
+#true mean
+theta_sample <- 2
+#likelihood variance
+sigma2 <- 2
+#sample size
+n <- 10
+#prior mean
+mu <- 7
+#prior variance
+tau2 <- 2
+#------------------------------------------
+
+#generate some data
+set.seed(123)
+y <- rnorm(n,theta_sample, sqrt(sigma2))
+
+#posterior mean
+mu_star <- ((1/tau2)*mu+(n/sigma2)*mean(y))/( (1/tau2)+(n/sigma2))
+#posterior standard deviation
+sd_star <- sqrt(1/( (1/tau2)+(n/sigma2)))
+
+
+#launch Stan model
+data<- list(N=n, y=y, sigma =sqrt(sigma2), mu = mu, tau = sqrt(tau2))
+fit <- stan(file="normal.stan", data = data, chains = 4, iter=2000)
+
+#--------------------------------
+#extract the posterior draws
+sim = extract(fit)
+theta_draws = sim$theta  # 1000 draws for each chain
+#head(theta_draws)
+
+hist(theta_draws, breaks= 40, probability = TRUE, xlab=expression(theta), ylab="density", 
+     main = "Posterior distribitions", col = "grey",  border="white")
+curve(dnorm(x, mu_star, sd_star), xlab=expression(theta), ylab="", col="red", lwd=2,
+      add=T, xlim=c(0,5)) 
+
+# empirical quantiles
+quant <- quantile(theta_draws)
+segments(quant, 0, quant, dnorm(quant, mu_star, sd_star), col="blue", lwd=3)
+
+legend("topright", c("Stan Posterior", "True Posterior","Quantiles"),
+  col=c("grey", "red", "blue" ), lty=c(1,1,1), lwd = c(2,2,2), cex=0.7)
+```
+
+----------------------------------------------------------------------------------------------
+
+### Exercise 6
+
+**Launch the following line of $\mathsf{R}$ code:**
+**Use now the `bayesplot` package. Read the help and produce for this example, using the object posterior, the following plots:**
+
+- **posterior intervals.**
+- **posterior areas.**
+- **marginal posterior distributions for the parameters.**
+
+**Quickly comment.**
+
+#### Solution
+
+```{r}
+# returns an array of theta draws
+posterior <- as.array(fit)
+print(dimnames(posterior))
+
+color_scheme_set("blue")
+mcmc_intervals(posterior, pars = "theta") + xlim(1.5, 3.5)
+mcmc_intervals_data(posterior, pars = "theta")
+```
+
+In this plot are shown the central posterior uncertainty intervals of the parameter $\theta$ computed from MCMC draws, based on quantiles. By default the central point is the posterior median. The thick segments represents the $50\%$ intervals and the thinner outer lines the $90\%$ intervals. In our case $90\%$ credible interval means that the subjective probability that the true $\theta$ is somewhere between $[1.88, 3.22]$ is $90\%$.
+
+```{r}
+color_scheme_set("blue")
+plot_title <- ggtitle("Posterior distributions", "with medians and 80% intervals")
+mcmc_areas(
+  posterior,
+  pars = c("theta"),
+  prob = 0.5, # 50% intervals
+  prob_outer = 1, # 100%
+  point_est = "median"
+) + theme_gray() + ggtitle("Posterior distributions", "with medians and 50% intervals") +
+  xlim(1.5, 3.5)
+```
+
+This plot shows the uncertainty intervals of $\theta$ draws from the posterior as shaded areas under the estimated posterior density curve. In this case the shaded area represents the $50\%$ credible interval, as in the plot before the  probability of $\theta$ to be in $[2.27, 2,83]$ is $50\%$. The central line is the estimate of the posterior median.
+
+```{r}
+color_scheme_set("blue")
+mcmc_hist(posterior, pars = "theta")+ theme_gray()
+```
+
+This plot combines all chains and depicts the marginal posterior distrubutions of the parameter $\theta$. The histogram represents the different draws of $\theta$ from the posterior. 
+
+----------------------------------------------------------------------------------------------
+
+### Exercise 7
+
+**Suppose you receive $n=15$ phone calls in a day, and you want to build a model to assess their average length. Your likelihood for each call length is $y_i \sim Poisson(\lambda)$. Now, you have to choose the prior $\pi(\lambda)$. Please, tell which of these priors is adequate to describe the problem, and provide a short motivation for each of them:**
+
+* $\pi(\lambda)=Beta(4,2);$
+
+* $\pi(\lambda)=Normal(1,2);$
+
+* $\pi(\lambda)=Gamma(4,2).$
+
+**Now, compute your posterior as**
+$$\pi(\lambda|y) \propto L(\lambda;y)\pi(\lambda)$$
+**for the selected prior. If your first choice was correct, you will be able to compute it analitically.**
+
+#### Solution
+All the considered priors distribution are plotted in function of the time.
+
+Considering $\pi(\lambda)=Beta(4,2)$, we can observe, on the following plot, that a Beta distribution is not adequate to describe the problem since it is defined on the time-interval $[0,1]$ and in this problems the posterior refers to the average length of phone calls which is unlimited.
+```{r}
+x_b <- seq(0, 1.5, length=1000)
+y_b <- dbeta(x_b, 4, 2)
+plot(x_b, y_b, type="l", lwd=2, col='blue')
+```
+
+Considering the second case, we can immediately cexclude $\pi(\lambda)=Normal(1,2)$ as prior distribution because it refers to the set of real numbers and phone calls length can not be extended to negative values.
+```{r}
+x_n <- seq(-10, 10, length=1000)
+y_n <- dnorm(x_n, mean=1, sd=2)
+plot(x_n, y_n, type="l", lwd=2, col='blue')
+```
+
+We choose the third case as prior distribution: gamma distribution is adequate to describe phone calls.
+```{r}
+x_g <- seq(0, 8, length=1000)
+y_g <- dgamma(x_g, 4, 2)
+plot(x_g, y_g, type="l", lwd=2, col='blue')
+```
+
+According to our choice, we can compute analitically the posterior distribution. Due to the fact that $y_1,\dots,y_n$ are indpendent, from the definition of Poisson distribution, the likelihood is: $$ L(\lambda;y)= \prod_{i=1}^{n}{\frac{e^{-\lambda}\lambda^{y_i}}{y_i!}}=\frac{e^{-n\lambda}\lambda^{\sum_{i=1}^n{y_i}}}{\prod_{i=1}^{n}{y_i!}}.$$
+From the definition of Gamma distribution, the prior is: $$ p(\lambda) = \frac{\beta^\alpha}{\Gamma(\alpha)}\lambda^{\alpha-1}e^{-\beta\lambda}.$$
+Then, we can conclude that the posterior is: $$\pi(\lambda|y) \propto \lambda^{\sum_{i=1}^n{y_i+\alpha-1}}e^{-(n+\beta)\lambda},$$
+which is proportional to a Gamma distribution $\mathsf{Gamma}(\sum_{i=1}^n{y_i}+\alpha,n+\beta)$
+where $\alpha=4$, $\beta=2$, $n=15$.
+
+----------------------------------------------------------------------------------------------
+
+### Exercise 8
+
+**Go to this link: [`rstan`](https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started), and follow the instructions to download and install the `rstan` library. Once you did it succesfully, open the file model called `biparametric.stan`, and replace the line:**
+
+`target+=cauchy_lpdf(sigma|0,2.5);`
+
+**with the following one:**
+
+`target+=uniform_lpdf(sigma|0.1,10);`
+
+**Which prior are you now assuming for your parameter $\sigma$? Reproduce the same plots as above and briefly comment.**
+
+#### Solution
+
+The prior distribution for sigma is a Uniform distribution: $p(\sigma) \sim Uniform(0.1,10)$. Therefore our model is:
+
+$$
+\begin{aligned}
+y_1,...,y_n &\sim \mathcal{N}(\theta, \sigma^2)\\
+\theta &\sim \text{Unif}(-10,10)\\
+\sigma  &\sim \text{Unif}(0.1,10)
+\end{aligned}
+$$
+
+```{r}
+#--------- input variables ---------------
+#true mean
+theta_sample <- 2
+#likelihood variance
+sigma2 <- 2
+#sample size
+n <- 10
+
+#-----------------------------------------
+
+#generate some data
+set.seed(123)
+y <- rnorm(n, theta_sample, sqrt(sigma2))
+data <- list(N=n, y=y, a=-10, b=10)
+
+# Cauchy prior for the sigma
+fit1 <- stan(file="biparametric1.stan", data = data, chains = 4, iter=2000, refresh=-1)
+sim1 <- extract(fit1)
+
+
+# Change the prior: Uniform prior for the sigma
+fit2 <- stan(file="biparametric.stan", data = data, chains = 4, iter=2000, refresh=-1)
+
+sim2 <- extract(fit2)
+posterior_biv <- as.matrix(fit2)
+
+theta_est <- mean(sim2$theta)
+sigma_est <- mean(sim2$sigma)
+c(theta_est, sigma_est)
+
+plot_title <- ggtitle("Posterior distributions", "with medians and 80% intervals")
+
+mcmc_areas(posterior_biv, pars = c("theta","sigma"), prob = 0.8) + 
+  plot_title + theme_gray()
+
+mcmc_intervals_data(posterior_biv)
+```
+
+```{r}
+boxplot(sim1$theta, sim2$theta, col = "#00a8cc", main = "Theta Posterior",
+        names = c("Cauchy prior", "Uniform prior") )
+boxplot(sim1$sigma, sim2$sigma, col = "#00a8cc", main = "Sigma Posterior",
+        names = c("Cauchy prior", "Uniform prior"))
+```
+
+**Conclusion**
+
+Even though we have changed the prior distribution of $\sigma$ the resulting posterior mean, median and variance of $\sigma$ and $\theta$ are slightly different: the previous means of $\theta$ and $\sigma$ were respectively $2.101426$ and $1.517766$, changing the prior of $\sigma$ the resulting means are  $2.095166$ for $\theta$, and $1.588718$ for $\sigma$. 
+
+|                                             | Theta    | Sigma    |
+| ------------------------------------------- | -------- | -------- |
+| Posterior Mean ( with Cauchy Sigma prior)   | 2.101426 | 1.517766 |
+| Posterior Mean ( with Uniform Sigma prior)  | 2.095166 | 1.588718 |
+| Posterior Median (with Cauchy Sigma prior)  | 2.10     | 1.43     |
+| Posterior Median (with Uniform Sigma prior) | 2.109808 | 1.500681 |
+
+
+Indeed the resulting plots of the mcmc areas are quite similar to the ones in Lab 3, and also the comparison between the boxplots shows that the posteriors are similar, suggesting that the priors used are not very informative for the posterior, which is more determined by the data.
+
+----------------------------------------------------------------------------------------------
 
 ### Exercise 9
 
-Reproduce the first plot above for the soccer goals, but this time by replacing Prior 1 with a $Gamma(2,4)$. Then, compute the final Bayes factor matrix (`BF_matrix`) with this new prior and the other ones unchanged, and comment. Is still Prior 2 favorable over all the others?
+**Reproduce the first plot above for the soccer goals, but this time by replacing Prior 1 with a $Gamma(2,4)$. Then, compute the final Bayes factor matrix (`BF_matrix`) with this new prior and the other ones unchanged, and comment. Is still Prior 2 favorable over all the others?**
 
-**Solution.**
+#### Solution
 
-We replace Prior 1 with a $Gamma(2,4)$
+We replace the old Prior 1 $Gamma(4.57, 1.43)$ with a $Gamma(2,4)$:
 
 ```{r}
-library(LearnBayes)
 data(soccergoals)
 
 y <- soccergoals$goals
 
-#write the likelihood function via the gamma distribution
+# write the likelihood function via the gamma distribution
 lik_pois<- function(data, theta){
   n <- length(data)
   lambda <- exp(theta)
   dgamma(lambda, shape =sum(data)+1, scale=1/n)
 }
 
- prior_gamma <- function(par, theta){
+# write the functions for the prior
+prior_gamma <- function(par, theta){
   lambda <- exp(theta)
   dgamma(lambda, par[1], rate=par[2])*lambda  
 }
 
- prior_norm <- function(npar, theta){
+prior_norm <- function(npar, theta){
  lambda=exp(theta)  
  (dnorm(theta, npar[1], npar[2]))
-  
 }
 
 lik_pois_v <- Vectorize(lik_pois, "theta")
 prior_gamma_v <- Vectorize(prior_gamma, "theta")
 prior_norm_v <- Vectorize(prior_norm, "theta")
 
-
-#likelihood
- curve(lik_pois_v(theta=x, data=y), xlim=c(-4,4), xlab=expression(theta), ylab = "density", lwd =2 )
-#prior 1
- curve(prior_gamma_v(theta=x, par=c(2, 4)), lty =2, col="red", add = TRUE, lwd =2)
-#prior 2 
- curve(prior_norm_v(theta=x, npar=c(1, .5)), lty =3, col="blue", add =TRUE, lwd=2)
-#prior 3 
- curve(prior_norm_v(theta=x, npar=c(2, .5)), lty =4, col="green", add =TRUE, lwd =2)
-#prior 4 
-  curve(prior_norm_v(theta=x, npar=c(1, 2)), lty =5, col="violet", add =TRUE, lwd =2)
-  legend(2, 1.8, c("Lik.", "Ga(2,4)", "N(1, 0.25)", "N(2,0.25)","N(1, 4)" ),
-  lty=c(1,2,3,4,5), col=c("black", "red", "blue", "green", "violet"),lwd=2, cex=0.9)
+## construct the plot for the likelihood function and different priors
+# likelihood
+curve(lik_pois_v(theta=x, data=y), lwd = 2, xlim=c(-4,4), xlab=expression(theta), ylab = "density")
+# prior 1
+curve(prior_gamma_v(theta=x, par=c(2, 4)), lwd = 2, col="red", add = TRUE)
+# OLD prior 1
+curve(prior_gamma_v(theta=x, par=c(4.57, 1.43)), lty = 2, col="red", add = TRUE)
+# prior 2 
+curve(prior_norm_v(theta=x, npar=c(1, .5)), lwd = 2, col="blue", add =TRUE)
+# prior 3 
+curve(prior_norm_v(theta=x, npar=c(2, .5)), lwd = 2, col="green", add =TRUE)
+# prior 4 
+curve(prior_norm_v(theta=x, npar=c(1, 2)), lwd = 2, col="violet", add =TRUE)
+legend("topright", c("Lik.", "Ga(2,4)", "Ga(4.57, 1.43)", "N(1, 0.25)", "N(2,0.25)","N(1, 4)"),
+       lty=c(1,1,2,1,1,1), lwd=c(2,2,1,2,2,2), col=c("black", "red", "red", "blue", "green", "violet"), cex=0.9)
 ```
 
 We compute the final Bayes factor matrix with this new prior and the other ones unchanged.
 
 ```{r}
-logpoissongamma <- function(theta, datapar){
+# compute the log posteriors
+logpoissongamma <- function(theta, datapar) {
    data <- datapar$data
    par <- datapar$par
    lambda <- exp(theta)
@@ -131,11 +651,9 @@ logpoissongamma <- function(theta, datapar){
    log_prior <- log(prior_gamma(par, theta))
    return(log_lik+log_prior)
 }
-
 logpoissongamma.v <- Vectorize( logpoissongamma, "theta")
 
-
-logpoissonnormal <- function( theta, datapar){
+logpoissonnormal <- function( theta, datapar) {
  data <- datapar$data
  npar <- datapar$par
  lambda <- exp(theta)
@@ -145,28 +663,34 @@ logpoissonnormal <- function( theta, datapar){
 }  
 logpoissonnormal.v <- Vectorize( logpoissonnormal, "theta")
 
-#log-likelihood
-curve(log(lik_pois(y, theta=x)), xlim=c(-1,2.6), ylim=c(-20,2), lty =1, ylab="log-posteriors",
+# log-likelihood
+curve(log(lik_pois(y, theta=x)), xlim=c(-1,2.6), ylim=c(-20,2), lwd = 1, ylab="log-posteriors",
       xlab=expression(theta))
-#log posterior 1
-curve(logpoissongamma.v(theta=x, list(data=y, par=c(2, 4))), col="red", lty =1, add =TRUE)
-#log posterior 2
-curve(logpoissonnormal.v( theta=x, datapar <- list(data=y, par=c(1, .5))), lty =1, col="blue",
+# log posterior 1
+curve(logpoissongamma.v(theta=x, list(data=y, par=c(2, 4))), col="red", lwd = 2, add =TRUE)
+# OLD log posterior 1
+curve(logpoissongamma.v(theta=x, list(data=y, par=c(4.57, 1.43))), col="red", lty = 2, add =TRUE)
+# log posterior 2
+curve(logpoissonnormal.v( theta=x, datapar <- list(data=y, par=c(1, .5))), lwd = 2, col="blue",
       add =TRUE)
-#log posterior 3
-curve(logpoissonnormal.v( theta=x, datapar <- list(data=y, par=c(2, .5))), lty =1, col="green",
-      add =TRUE, lwd =2)
-#log posterior 4
-curve(logpoissonnormal.v( theta=x, list(data=y, par=c(1, 2))), lty =1, col="violet",
-      add =TRUE, lwd =2)
-legend(2, 1.3, c( "loglik", "lpost 1", "lpost 2", "lpost 3", "lpost 4" ), lty=1,
-       col=c("black", "red", "blue", "green", "violet"),lwd=2, cex=0.9)
+# log posterior 3
+curve(logpoissonnormal.v( theta=x, datapar <- list(data=y, par=c(2, .5))), lwd = 2, col="green",
+      add =TRUE)
+# log posterior 4
+curve(logpoissonnormal.v( theta=x, list(data=y, par=c(1, 2))), lwd = 2, col="violet",
+      add =TRUE)
+legend("topright", c( "loglik", "lpost 1", "OLD lpost 1", "lpost 2", "lpost 3", "lpost 4"), lty=c(1,1,2,1,1,1), lwd=c(2,2,1,2,2,2), col=c("black", "red", "red", "blue", "green", "violet"), cex=0.9)
 ```
 
-We can see that Prior 1 is still the better one, while our new Prior 1 is much worse than the previous one we chose, $Gamma(4.57, 1.43)$.
+We can see that Prior 2 is still the better one, while our new Prior 1 $Gamma(2, 4)$ (red 
+continuous line) is much worse than the previous one we chose, $Gamma(4.57, 1.43)$ (red
+dashed line).
+
+Now we compare the models above by using the Bayes Factor, which is the ratio between the marginal likelihood of two models. The larger the BF the better the model in the numerator position.
 
 ```{r}
-datapar <- list(data=y, par=c(4.57, 1.43))
+# compute the log marginal likelihoods using the function laplace() 
+datapar <- list(data=y, par=c(2, 4))
 fit1 <- laplace(logpoissongamma, .5, datapar)
 datapar <- list(data=y, par=c(1, .5))
 fit2 <- laplace(logpoissonnormal, .5, datapar)
@@ -194,20 +718,21 @@ round_bf
 
 Since the second row of the `BF_matrix` has always a value bigger than $1$ we can say that the Prior 2 is still preferable over all the others. The new Prior 1 we used is worse than Prior 2 (since the cell `[1, 2]` is less than $1$), but is better than Prior 3 and Prior 4 (since the cells `[1, 3]` and `[1, 4]` are greater than $1$).
 
+------------------------------------------------------------------------------------------------
 
 ### Exercise 10
 
-Let $y=(1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0)$ collect the results of tossing $n=14$ times an unfair coin, where $1$ denotes heads and $0$ tails, and $p=Prob(y_i=1)$.
+**Let $y=(1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0)$ collect the results of tossing $n=14$ times an unfair coin, where $1$ denotes heads and $0$ tails, and $p=Prob(y_i=1)$.**
 
-- Looking at the `Stan` code for the other models, write a short `Stan` Beta-Binomial model, where $p$ has a $Beta(a, b)$ prior with $a=3$, $b=3$.
+- **Looking at the `Stan` code for the other models, write a short `Stan` Beta-Binomial model, where $p$ has a $Beta(a, b)$ prior with $a=3$, $b=3$.**
   
-- Extract the posterior distribution with the function `extract()`;
+- **Extract the posterior distribution with the function `extract()`;**
 
-- Produce some plots with the `bayesplot` package and comment.
+- **Produce some plots with the `bayesplot` package and comment.**
 
-- Compute analitically the posterior distribution and compare it with the `Stan` distribution.
+- **Compute analitically the posterior distribution and compare it with the `Stan` distribution.**
 
-**Solution.**
+#### Solution
 
 - The `Stan` Beta-Binomial model is:
 
@@ -215,10 +740,14 @@ Let $y=(1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0)$ collect the results of tossin
 y <- c(1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0)
 n <- 14
 
-library(rstan)
+succ <- sum(y)
+succ
+```
+
+```{r, rstan}
 #launch Stan model
-data <- list(N=n, y=y, a = 3, b = 3)
-fit <- stan(file="beta_binomial.stan", data = data, chains = 4, iter=2000)
+data <- list(N=n, s=succ, a = 3, b = 3)
+fit <- stan(file="beta_binomial.stan", data = data, chains = 4, iter=2000, refresh=-1)
 ```
 
 - We extract the posterior distribution:
@@ -226,7 +755,75 @@ fit <- stan(file="beta_binomial.stan", data = data, chains = 4, iter=2000)
 ```{r}
 #extract Stan output
 sim <- extract(fit)
+
+#plot the Stan posterior
+plot(dbinom(-5:10, n, 0.01), type="p", pch=16, lty=2, lwd=1, col="black", 
+     xlim=c(-0.1,10), ylim=c(0, 4), ylab="density", xlab=expression(p))
+curve(dbeta(x, 3, 3), col="red", lty=1, lwd=2, add=T)
+lines(density(sim$p, adj=2), col ="blue", lwd=2, lty=1)
+legend("topright", 1, c("Prior", "Likelihood", "Stan Posterior"), c("red", "black", "blue" ),
+       lty=c(1,0,1), lwd=c(1,1,2), cex=0.8)
 ```
 
+- Some plots are:
+
+```{r}
+#extract stan output
+p_est <- mean(sim$p)
+print(paste("The estamated p is", p_est))
+```
+
+```{r}
+traceplot(fit, pars="p")
+```
+
+```{r}
+#MCMC areas
+posterior <- as.matrix(fit)
+
+plot_title <- ggtitle("Posterior distributions", "with medians and 80% intervals")
+
+mcmc_areas(posterior, pars = "p", prob = 0.8) + plot_title + xlim(0, 0.8)
+
+mcmc_intervals(posterior, prob_outer = 1 , pars = "p") + xlim(0, 0.8)
+```
+
+- We then perform the analytic computation of the posterior distribution. We have that the prior distribution is
+$$
+Pr(p) = Beta(\alpha, \beta) = \frac{1}{B(\alpha, \beta)} p^{\alpha-1} (1 - p)^{\beta-1}
+$$
+while the likelihood is
+$$
+Pr(\underline{y} \mid p) = \prod_{i=1}^n Bernoulli(p) = \prod_{i=1}^n p^i (1-p)^{1-i} = p^{\sum_{i=1}^n i} (1-p)^{n-\sum_{i=1}^n i}.
+$$
+The marginal likelihood is instead
+$$
+\begin{align*}
+Pr(\underline{y}) &= \int_0^1 Pr(\underline{y} \mid p) Pr(p) dp \\
+&= \int_0^1  p^{\sum_{i=1}^n i} (1-p)^{n-\sum_{i=1}^n i} \frac{1}{B(\alpha, \beta)} p^{\alpha-1} (1 - p)^{\beta-1} dp = \\
+&=\frac{1}{B(\alpha, \beta)} \int_0^1 p^{\alpha - 1 + \sum_{i=1}^n i} (1-p)^{\beta-1+n -\sum_{i=1}^n i} dp \\
+&= \frac{1}{B(\alpha, \beta)} B \left(\alpha + \sum_{i=1}^n i, \beta + n - \sum_{i=1}^n i \right)
+\end{align*}
+$$
+So we have that the posterior distibution, for the Bayes theorem, is
+$$
+\begin{align*}
+Pr(p \mid \underline{y}) &= \frac{Pr(y \mid p) Pr(p)}{Pr(\underline{y})} \\
+&= \frac{p^{\sum_{i=1}^n i} (1-p)^{n-\sum_{i=1}^n i} \frac{1}{B(\alpha, \beta)} p^{\alpha-1} (1 - p)^{\beta-1}}{\frac{1}{B(\alpha, \beta)} B \left(\alpha + \sum_{i=1}^n i, \beta + n - \sum_{i=1}^n i \right)} \\
+&= \frac{1}{ B \left(\alpha + \sum_{i=1}^n i, \beta + n - \sum_{i=1}^n i \right)} p^{\alpha - 1 + \sum_{i=1}^n i} (1-p)^{\beta-1+n -\sum_{i=1}^n i} \\
+&\sim Beta \left(\alpha + \sum_{i=1}^n i, \beta+n -\sum_{i=1}^n i \right)
+\end{align*}
+$$
+Since $\sum_{i=1}^n i = 4$, $\alpha = 3$ and $\beta=3$ we have that the posterior is a $Beta(7, 13)$.
+We compare it with the `Stan` distribution:
+
+```{r}
+curve(dbeta(x, 7, 13), xlim=c(0, 1), col="red", 
+      ylim=c(0, 4), ylab="density", xlab=expression(p))
+lines(density(sim$p, adj=2), col ="blue")
+legend("topright", 1, c("Real Posterior", "Stan Posterior"), c("red", "blue"))
+```
+
+We can see that they coincide almost perfectly.
 
 <!-- knitr::knit("Homework1_2020_GROUP_I.Rmd", tangle = TRUE, output ="Homework1_2020_GROUP_I.R") -->
