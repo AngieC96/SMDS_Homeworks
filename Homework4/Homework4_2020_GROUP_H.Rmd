@@ -1,0 +1,73 @@
+---
+title: "Homework_4"
+date: "27/05/2020"
+output:
+  rmdformats::readthedown:
+  html_document:
+    highlight: kate
+    lightbox: true
+    gallery: true
+    toc: yes
+    toc_depth: 3
+  beamer_presentation:
+    highlight: kate
+  include: null
+  ioslides_presentation:
+    highlight: kate
+  pdf_document:
+    highlight: kate
+    keep_tex: yes
+    toc: yes
+  slide_level: 2
+  slidy_presentation:
+    fig.height: 3
+    fig.width: 4
+    highlight: kate
+header-includes:
+- \usepackage{color}
+- \definecolor{Purple}{HTML}{911146}
+- \definecolor{Orange}{HTML}{CF4A30}
+- \setbeamercolor{alerted text}{fg=Orange}
+- \setbeamercolor{frametitle}{bg=Purple}
+institute: University of Udine & University of Trieste
+graphics: yes
+fontsize: 10pt
+---
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(fig.align = 'center', warning=FALSE, message=FALSE, fig.asp=0.625, dev='png', global.par = TRUE, dev.args=list(pointsize=10), fig.path = 'figs/')
+```
+
+```{r setup, include=FALSE}
+library(knitr)
+local({
+  hook_plot = knit_hooks$get('plot')
+  knit_hooks$set(plot = function(x, options) {
+    paste0('\n\n----\n\n', hook_plot(x, options))
+  })
+})
+knitr::opts_chunk$set(echo = TRUE, tidy = TRUE)
+```
+
+
+**Group H: Carraro, Saveri, Monteiro Milano Oliveira**
+
+```{r message=FALSE}
+library(MASS)
+library(DAAG)
+```
+
+## DAAG Exercises
+
+Chapter 6 (from page 214), exercises 6, 8, 10, 11.\
+Chapter 8 (from page 281), exercises 1, 2, 3, 6.
+
+### Chapter 6, Exercise 6
+
+**Text**
+
+#### Solution
+
+
+
+
+<!-- knitr::knit("Homework1_2020_GROUP_I.Rmd", tangle = TRUE, output ="Homework1_2020_GROUP_I.R") -->

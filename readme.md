@@ -89,3 +89,23 @@ In this section are listed the homeworks assigned from the previously cited sour
 | Arianna Tasciotti | 1, 2 | 1       |
 
 - **Grade:** -
+
+### Homework 4
+
+* **Due date:** Wednesday 27th May 2020
+
+* **Group:** Group H
+
+* **Members:** Angela Carraro, Giullia Monteiro Milano Oliveira, Gaia Saveri
+
+* **Exercises:**
+  * DAAG: Chapter 6: exercises 6, 8, 10, 11.
+  * DAAG: Chapter 8: exercises 1, 2, 3, 6.
+
+|                                  | DAAG |
+| -------------------------------- | ---- |
+| Angela Carraro                   |      |
+| Giullia Monteiro Milano Oliveira |      |
+| Gaia Saveri                      |      |
+
+- **Grade:** -
