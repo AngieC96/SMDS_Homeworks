@@ -1,6 +1,6 @@
 ---
 title: "Homework_4"
-author: "Angela Carraro, Giullia Monteiro Milano Oliveira, Gaia Saveri"
+author: "Group H: Angela Carraro, Giullia Monteiro Milano Oliveira, Gaia Saveri"
 date: "27/05/2020"
 output:
   rmdformats::readthedown:
@@ -57,20 +57,21 @@ library(MASS)
 library(DAAG)
 library(boot)
 library(dplyr)
+library(MPV)
+library(lattice)
 ```
 
-## DAAG Exercises
+# DAAG Exercises
 
 Chapter 6 (from page 214), exercises 6, 8, 10, 11.\
 Chapter 8 (from page 281), exercises 1, 2, 3, 6.
 
-### Chapter 6, Exercise 6
+## Chapter 6, Exercise 6
 
 **The following investigates the consequences of not using a logarithmic transformation for the `nihills` data analysis. The second differs from the first having a `dist x climb` interaction term, additional to linear terms in `dist` and `climb`.**
 
 a) **Fit the two models:**
 ```{r 6.6_req, eval=FALSE}
-library(DAAG)
 nihills.lm <- lm(time ~ dist+climb, data=nihills)
 nihills2.lm <- lm(time ~ dist+climb+dist:climb, data = nihills)
 anova(nihills.lm, nihills2.lm)
@@ -107,8 +108,9 @@ nihills.lm <- lm(time ~ dist+climb, data=nihills.without)
 nihills2.lm <- lm(time ~ dist+climb+dist:climb, data = nihills.without)
 #check diagnostic plots
 par(mfrow=c(2,2), oma=c(0,0,0,0))
+#model 2
 plot(nihills2.lm)
-par(mfrow=c(2,2), oma=c(0,0,0,0))
+#model 1 
 plot(nihills.lm)
 ```
 
@@ -126,10 +128,33 @@ nihills.without.annalong <- nihills.without %>% subset(rownames(nihills.without)
 #refit both models
 nihills.lm <- lm(time ~ dist+climb, data=nihills.without.annalong)
 nihills2.lm <- lm(time ~ dist+climb+dist:climb, data = nihills.without.annalong)
+par(mfrow=c(2,2), oma=c(0,0,0,0))
+#model 2
+plot(nihills2.lm)
+#model 1
+plot(nihills.lm)
+```
+
+The point `Flagstaff to Carling` has now high Cook distance for both models, so we try to remove this point too.
+
+```{r 6.6b4}
+nihills.without.flagstaff <- nihills.without.annalong %>% subset(rownames(nihills.without.annalong) != "Flagstaff to Carling")
+nihills.lm <- lm(time ~ dist + climb, data=nihills.without.flagstaff)
+nihills2.lm <- lm(time ~ dist + climb + dist:climb, data = nihills.without.flagstaff)
+par(mfrow=c(2,2), oma=c(0,0,0,0))
+#model 2
+plot(nihills2.lm)
+#model 1
+plot(nihills.lm)
+```
+
+We removed all problematic points. We check the `anova` test again:
+
+```{r 6.6b5}
 anova(nihills.lm, nihills2.lm)
 ```
 
-The $p$-value is again increased significantly, and the `anova` test now suggests that there is no significant improvement in choosing the more complex Model 1 instead of the simpler Model 2.
+The $p$-value is again increased significantly, and the `anova` test now suggests that there is no significant improvement in choosing the more complex Model 2 instead of the simpler Model 1.
 
 --------------------------------------------------------------------------------------------------------------
 
@@ -191,37 +216,39 @@ We can observe that bootstrap-based confidence intervals and `predict.lm()` conf
 
 --------------------------------------------------------------------------------------------------------------
 
-### Chapter 6, Exercise 10
+## Chapter 6, Exercise 10
 
-**The data frame `table.b3` in the MPV package contains data on gas mileage and 11 other variables for a sample of 32 automobiles.**
+**The data frame `table.b3` in the *MPV* package contains data on gas mileage and $11$ other variables for a sample of $32$ automobiles.**
 
 a) **Construct a scatterplot of `y` (mpg) versus `x1` (displacement). Is the relationship between these variables non-linear?**
 
-#### Solution
-
-```{r 6.10a, echo=TRUE}
-library(MPV)
-gas_mil <- table.b3
-attach(gas_mil)
-plot(x1, y, xlab="displacement", ylab="mpg")
-```
-
-The relationship line between these two variables seems sligthly curved, but a simple linear regression with a negative correlation coefficient could do. 
-
 b) **Use the `xyplot()` function, and `x11` (type of transmission) as a `group` variable. Is a linear model reasonable for these data?**
-
-#### Solution
-
-```{r 6.10b, echo=TRUE}
-library(lattice)
-xyplot(y~x1, groups=x11, data=gas_mil, xlab="displacement", ylab="mpg")
-```
-
-Taking into consideration the variable x11 as a group variable, a linear model might not be the most appropriate model for this data because this variable separates the data into two distinct groups. Each group covers a different range of the variable x1. Therefore, this might be influencing the model and making it non-linear.
 
 c) **Fit the model relating `y` to `x1` and `x11` which gives two lines having possibly different slopes and intercepts. Check the diagnostics. Are there any influential observations? Are there any influential outliers?**
 
+d) **Plot the residuals against the variable `x7` (number of transmission speeds), again using `x11` as a `group` variable. Is there anything striking about this plot?**
+
 #### Solution
+
+a) The scatterplot is
+
+```{r 6.10a, echo=TRUE}
+gas_mil <- table.b3
+attach(gas_mil)
+plot(x1, y, pch=20, col="green", cex=1.5, xlab="displacement", ylab="mpg", main="Scatterplot")
+```
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; The relationship line between these two variables seems sligthly curved, but a simple linear regression with a negative correlation coefficient could do. 
+
+b) The plot is
+
+```{r 6.10b, echo=TRUE}
+xyplot(y~x1, groups=x11, data=gas_mil, type = c("p", "r"), pch=20, cex=1.5, xlab="displacement", ylab="mpg", main="Scatterplot")
+```
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Taking into consideration the variable x11 as a group variable, a linear model might not be the most appropriate model for this data because this variable separates the data into two distinct groups. Each group covers a different range of the variable x1. Therefore, this might be influencing the model and making it non-linear.
+
+c) The fitted dmodel is
 
 ```{r 6.10c, echo=TRUE}
 fit1 <- lm(y~x1+x11, data=gas_mil)
@@ -230,21 +257,24 @@ par(mfrow=c(2,2))
 plot(fit1)
 ```
 
-There is an influential observation. It is the observation number 17. In the plot Residuals vs Leverage, it can be seen that this point highly influences the regression line. If this point is removed, the coefficients will most probably change. On the other hand, there isn’t any influential outlier because no observation lies outside the dashed lines of this plot. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; There is an influential observation. It is the observation number $17$. In the plot Residuals vs Leverage, it can be seen that this point highly influences the regression line. If this point is removed, the coefficients will most probably change. On the other hand, there isn’t any influential outlier because no observation lies outside the dashed lines of this plot. 
 
-d) **Plot the residuals against the variable `x7` (number of transmission speeds), again using `x11` as a `group` variable. Is there anything striking about this plot?**
-
-#### Solution
+d) The plot of the residuals is
 
 ```{r 6.10d, echo=TRUE}
-xyplot(resid(fit1) ~ x7, group=x11, data=gas_mil)
+xyplot(resid(fit1) ~ x7, group=x11, data=gas_mil, pch=20, main="Residual plot",
+       panel=function(x, y, ...) {
+         panel.xyplot(x, y, ...);
+         ltext(x=x, y=y, labels=seq(1, length(x7), 1), pos=4, offset=0.8, cex=0.5)
+       })
 ```
 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; In this plot we observe that the points are all well calssified and almost perfectly separated except for one blue point which is in the middle of the pink ones. 
 
 --------------------------------------------------------------------------------------------------------------
 
 
-### Chapter 6, Exercise 11
+## Chapter 6, Exercise 11
 
 **The following code is designed to explore effects that can result from the omission of explanatory variables:**
 
@@ -322,16 +352,18 @@ So we can see that now the variable `x2` can have negative sign in both the two 
 
 --------------------------------------------------------------------------------------------------------------
 
-### Chapter 8, Exercise 1
+## Chapter 8, Exercise 1
 
 **The following table shows numbers of occasions when inhibition (i.e., no flow of current across a membrane) occurred within 120 s, for different concentrations of the protein peptide-C (data are used with the permission of Claudia Haarmann, who obtained these data in the course of her PhD research). The outcome `yes` implies that inhibition has occurred.**
 
 | conc  | 0.1   | 0.5   | 1     | 10    | 20    | 30    | 50    | 70    | 80    | 100   | 150  |
-| ----- |:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|-----:|
+| ----- |-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|------|
 | no    | 7     | 1     | 10    | 9     | 2     | 9     | 13    | 1     | 1     | 4     | 3    |
 | yes   | 0     | 0     | 3     | 4     | 0     | 6     | 7     | 0     | 0     | 1     | 7    |
 
 **Use logistic regression to model the probability of inhibition as a function of protein concentration.**
+
+#### Solution
 
 ```{r 8.1, echo=TRUE}
 conc. <- c(0.1, 0.5, 1, 10, 20, 30, 50, 70, 80, 100, 150)
@@ -340,15 +372,22 @@ yes <- c(0, 0, 3, 4, 0, 6, 7, 0, 0, 1, 7)
 margin <- no+yes
 prop <- yes/margin
 table1 <- data.frame(conc.,no,yes,margin,prop)
+table1
+```
+
+```{r}
 conc.logit <- glm(prop ~ conc., family=binomial(link="logit"), weights=margin, data=table1)
 summary(conc.logit)
 ```
 
+The results suggests that `conc` is a reasonable explanatory variable for the occurrence of inhibition in a time lapse of $120 s$.
 --------------------------------------------------------------------------------------------------------------
 
-### Chapter 8, Exercise 2
+## Chapter 8, Exercise 2
 
-**In the data set (an artificial one of 3121 patients, that is similar to a subset of the data analyzed in Stiell et al., 2001) minor.head.injury, obtain a logistic regression model relating clinically.important.brain.injury to other variables. Patients whose risk is sufficiently high will be sent for CT (computed tomography). Using a risk threshold of 0.025 (2.5%), turn the result into a decision rule for use of CT.**
+**In the data set (an artificial one of $3121$ patients, that is similar to a subset of the data analyzed in Stiell et al., 2001) `minor.head.injury`, obtain a logistic regression model relating `clinically.important.brain.injury` to other variables. Patients whose risk is sufficiently high will be sent for CT (computed tomography). Using a risk threshold of $0.025$ ($2.5\%$), turn the result into a decision rule for use of CT.**
+
+#### Solution
 
 ```{r 8.2, echo=TRUE}
 #Dividing the data into train and test data
@@ -373,7 +412,7 @@ glm.predict[1:10]
 
 --------------------------------------------------------------------------------------------------------------
 
-### Chapter 8, Exercise 3
+## Chapter 8, Exercise 3
 
 **Consider again the `moths` data set of Section 8.4.**
 
@@ -450,7 +489,7 @@ summary(P1.glm <- glm(P ~ habitat + log(meters), family=poisson, data=moths))
 
 --------------------------------------------------------------------------------------------------------------
 
-### Chapter 8, Exercise 6
+## Chapter 8, Exercise 6
 
 **As in the previous exercise, the function `poissonsim()` allows for experimentation with Poisson regression. In particular, `poissonsim()` can be used to simulate Poisson responses with log-rates equal to $a + bx$, where $a$ and $b$ are fixed values by default.**
 
@@ -484,6 +523,6 @@ summary(poisson)
 summary(quasi.poisson)
 ```
 
-The coefficients are the same for both models. The difference between these two models is in the dispersion parameter (which is taken to be $1$ for the poisson family, and $2578221$ for the quasipoisson fmily), thus $p$-values are very different (significantly higher in the case of quasipoisson family).
+The coefficients are the same for both models. The difference between these two models is in the dispersion parameter (which is taken to be $1$ for the `poisson` family, and $2578221$ for the `quasipoisson` family), thus $p$-values are very different (significantly higher in the case of quasipoisson family).
 
 <!-- knitr::knit("Homework4_2020_GROUP_I.Rmd", tangle = TRUE, output ="Homework1_2020_GROUP_I.R") -->
