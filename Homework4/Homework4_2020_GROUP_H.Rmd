@@ -57,7 +57,6 @@ library(MASS)
 library(DAAG)
 library(boot)
 library(dplyr)
-library(lattice)
 ```
 
 ## DAAG Exercises
@@ -89,7 +88,7 @@ nihills2.lm <- lm(time ~ dist+climb+dist:climb, data = nihills)
 anova(nihills.lm, nihills2.lm)
 ```
 
-The small $p$-value of the $F$-test result of the `anova` table above suggests us to accept the Model 2 (namely the one including an interaction term, thus rejecting the hypothesis that the interaction term should be null) in place of the Model 1.
+The small $p$-value of the F-test result of the `anova` table above suggests us to accept the Model 2 (namely the one including an interaction term, thus rejecting the hypothesis that the interaction term should be null) in place of the Model 1.
 
 ```{r 6.6a2, echo=TRUE, warning=FALSE}
 #diagnistics for model 2
@@ -97,11 +96,11 @@ par(mfrow=c(2,2), oma=c(0,0,0,0))
 plot(nihills2.lm)
 ```
 
-According to the "Residual vs Fitted" plot, we can see that `Slieve Donard` and `Meelberg Meelmore` have high residuals. Moreover, looking at the "Residual vs Leverage" plot we can see that `Seven Sevens` is an outlier (having large Cook's distance). Hence these observation can be considered problematic, we try to remove them from the model and refit it. 
+According to the Residual vs Fitted plot, we can see that `Slieve Donard` and `Meelberg Meelmore` have high residuals. Moreover, looking at the Residual vs Leverage plot we can see that `Seven Sevens` is an outlier (having large Cook's distance). Hence these observation can be considered problematic, we try to remove them from the model and refit it. 
 
 ```{r 6.6b, echo=TRUE, warning=FALSE}
 #remove problematic observations
-remove <- c("Slieve Donard", "Meelbeg Meelmore", "Seven Sevens")
+remove<-c("Slieve Donard", "Meelbeg Meelmore", "Seven Sevens")
 nihills.without <- nihills %>% subset(!rownames(nihills) %in% remove)
 #refit both models
 nihills.lm <- lm(time ~ dist+climb, data=nihills.without)
@@ -109,6 +108,7 @@ nihills2.lm <- lm(time ~ dist+climb+dist:climb, data = nihills.without)
 #check diagnostic plots
 par(mfrow=c(2,2), oma=c(0,0,0,0))
 plot(nihills2.lm)
+par(mfrow=c(2,2), oma=c(0,0,0,0))
 plot(nihills.lm)
 ```
 
@@ -192,6 +192,53 @@ We can observe that bootstrap-based confidence intervals and `predict.lm()` conf
 --------------------------------------------------------------------------------------------------------------
 
 ### Chapter 6, Exercise 10
+
+**The data frame `table.b3` in the MPV package contains data on gas mileage and 11 other variables for a sample of 32 automobiles.**
+
+a) **Construct a scatterplot of `y` (mpg) versus `x1` (displacement). Is the relationship between these variables non-linear?**
+
+#### Solution
+
+```{r 6.10a, echo=TRUE}
+library(MPV)
+gas_mil <- table.b3
+attach(gas_mil)
+plot(x1, y, xlab="displacement", ylab="mpg")
+```
+
+The relationship line between these two variables seems sligthly curved, but a simple linear regression with a negative correlation coefficient could do. 
+
+b) **Use the `xyplot()` function, and `x11` (type of transmission) as a `group` variable. Is a linear model reasonable for these data?**
+
+#### Solution
+
+```{r 6.10b, echo=TRUE}
+library(lattice)
+xyplot(y~x1, groups=x11, data=gas_mil, xlab="displacement", ylab="mpg")
+```
+
+Taking into consideration the variable x11 as a group variable, a linear model might not be the most appropriate model for this data because this variable separates the data into two distinct groups. Each group covers a different range of the variable x1. Therefore, this might be influencing the model and making it non-linear.
+
+c) **Fit the model relating `y` to `x1` and `x11` which gives two lines having possibly different slopes and intercepts. Check the diagnostics. Are there any influential observations? Are there any influential outliers?**
+
+#### Solution
+
+```{r 6.10c, echo=TRUE}
+fit1 <- lm(y~x1+x11, data=gas_mil)
+summary(fit1)
+par(mfrow=c(2,2))
+plot(fit1)
+```
+
+There is an influential observation. It is the observation number 17. In the plot Residuals vs Leverage, it can be seen that this point highly influences the regression line. If this point is removed, the coefficients will most probably change. On the other hand, there isn’t any influential outlier because no observation lies outside the dashed lines of this plot. 
+
+d) **Plot the residuals against the variable `x7` (number of transmission speeds), again using `x11` as a `group` variable. Is there anything striking about this plot?**
+
+#### Solution
+
+```{r 6.10d, echo=TRUE}
+xyplot(resid(fit1) ~ x7, group=x11, data=gas_mil)
+```
 
 
 --------------------------------------------------------------------------------------------------------------
@@ -277,11 +324,52 @@ So we can see that now the variable `x2` can have negative sign in both the two 
 
 ### Chapter 8, Exercise 1
 
+**The following table shows numbers of occasions when inhibition (i.e., no flow of current across a membrane) occurred within 120 s, for different concentrations of the protein peptide-C (data are used with the permission of Claudia Haarmann, who obtained these data in the course of her PhD research). The outcome `yes` implies that inhibition has occurred.**
+
+| conc  | 0.1   | 0.5   | 1     | 10    | 20    | 30    | 50    | 70    | 80    | 100   | 150  |
+| ----- |:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|-----:|
+| no    | 7     | 1     | 10    | 9     | 2     | 9     | 13    | 1     | 1     | 4     | 3    |
+| yes   | 0     | 0     | 3     | 4     | 0     | 6     | 7     | 0     | 0     | 1     | 7    |
+
+**Use logistic regression to model the probability of inhibition as a function of protein concentration.**
+
+```{r 8.1, echo=TRUE}
+conc. <- c(0.1, 0.5, 1, 10, 20, 30, 50, 70, 80, 100, 150)
+no <- c(7, 1, 10, 9, 2, 9, 13, 1, 1, 4, 3)
+yes <- c(0, 0, 3, 4, 0, 6, 7, 0, 0, 1, 7)
+margin <- no+yes
+prop <- yes/margin
+table1 <- data.frame(conc.,no,yes,margin,prop)
+conc.logit <- glm(prop ~ conc., family=binomial(link="logit"), weights=margin, data=table1)
+summary(conc.logit)
+```
 
 --------------------------------------------------------------------------------------------------------------
 
 ### Chapter 8, Exercise 2
 
+**In the data set (an artificial one of 3121 patients, that is similar to a subset of the data analyzed in Stiell et al., 2001) minor.head.injury, obtain a logistic regression model relating clinically.important.brain.injury to other variables. Patients whose risk is sufficiently high will be sent for CT (computed tomography). Using a risk threshold of 0.025 (2.5%), turn the result into a decision rule for use of CT.**
+
+```{r 8.2, echo=TRUE}
+#Dividing the data into train and test data
+library(caTools)
+set.seed(123)   
+sample <- sample.split(head.injury, SplitRatio = 0.75) 
+train <- subset(head.injury, sample==TRUE) 
+test <- subset(head.injury, sample==FALSE)
+
+#fitting the logistic regression model
+fit.glm <- glm(clinically.important.brain.injury ~ ., family=binomial(link="logit"), data=train)
+summary(fit.glm)
+
+#predicting
+glm.probs <- predict(fit.glm, newdata=test, type="response")
+glm.probs[1:10]
+
+#setting the threshold, where "yes" means "use of CT"
+glm.predict <- ifelse(glm.probs>0.025, "yes", "no")
+glm.predict[1:10]
+```
 
 --------------------------------------------------------------------------------------------------------------
 
@@ -295,14 +383,16 @@ b) **Analyze the $P$ moths, in the same way as the $A$ moths were analyzed. Comm
 
 #### Solution
 
-The code to generate the figure is taken from DAAG book, page 261 (with a correction seen in the [file](https://maths-people.anu.edu.au/~johnm/r-book/3edn/updates/updates2013-2018-bklt.pdf) at this [page](https://maths-people.anu.edu.au/~johnm/r-book/daagur3.html)).
+The code to generate the figure is taken from DAAG book, page 261 (with a correction seen in the [file](https://maths-people.anu.edu.au/~johnm/r-book/3edn/updates/updates2013-2018-bklt.pdf) at this [page](https://maths-people.anu.edu.au/~johnm/r-book/daagur3.html))).
 
 ```{r}
+library(lattice)
+
 ## Number of moths by habitat
 rbind(Number=table(moths[, 4]), sapply(split(moths[, -4], moths$habitat), apply, 2, sum));
 ```
 
-Here, `Number` is the number of transects for that habitat, while `meters` is the total length.
+Here, Number is the number of transects for that habitat, while meters is the total length.
 
 ```{r}
 dotplot(habitat ~ A, data=moths, xlab="Number of moths (species A)", panel=function(x, y, ...){
@@ -315,7 +405,6 @@ dotplot(habitat ~ A, data=moths, xlab="Number of moths (species A)", panel=funct
 ```
 
 The model will take the form
-  
 $$
 y = \text{habitat effect} + \beta \log(\text{length of section})
 $$
@@ -365,37 +454,36 @@ summary(P1.glm <- glm(P ~ habitat + log(meters), family=poisson, data=moths))
 
 **As in the previous exercise, the function `poissonsim()` allows for experimentation with Poisson regression. In particular, `poissonsim()` can be used to simulate Poisson responses with log-rates equal to $a + bx$, where $a$ and $b$ are fixed values by default.**
 
-a) **Simulate $100$ Poisson responses using the model $$log\lambda = 2 -4x$$ for $x=0, 0.01, 0.02,\dots,1.0$. Fit a Poisson regression model to these data, and compare the estimated coefficients with the true coefficients. How well does the estimated model predict future observations?**
+a) **Simulate $100$ Poisson responses using the model $log\lambda = 2 -4x$ for $x=0, 0.01, 0.02,\dots,1.0$. Fit a Poisson regression model to these data, and compare the estimated coefficients with the true coefficients. How well does the estimated model predict future observations?**
   
-b) **Simulate $100$ Poisson responses using the model $$log\lambda  = 2-bx$$ where $b$ is normally distributed with mean $4$ and standard deviation $5$. [Use the argument `slope.sd=5`, in the `poissonsim()` function]. How do the results using the `poisson` and `quasipoisson` families differ?  **
+b) **Simulate $100$ Poisson responses using the model $log\lambda  = 2-bx$ where $b$ is normally distributed with mean $4$ and standard deviation $5$. [Use the argument `slope.sd=5`, in the `poissonsim()` function]. How do the results using the `poisson` and `quasipoisson` families differ?  **
   
 #### Solution
 
 ```{r ex8.6a, echo=TRUE, warning=FALSE}
-x <- seq(0,1,0.01)
-sim <- poissonsim(x, a=2, b=-4, seed=26)
+x<-seq(0,1,0.01)
+sim<-poissonsim(x, a=2, b=-4, seed=26)
 
 #poisson regression model fitting
-poisson.fit <- glm(y~x, family=poisson, data=sim)
+poisson.fit<-glm(y~x, family=poisson, data=sim)
 #estimated coefficients 
-poisson.coef <- summary(poisson.fit)$coeff
+poisson.coef<-summary(poisson.fit)$coeff
 poisson.coef
 
-sim2 <- poissonsim(x, a=poisson.coef[1], b=poisson.coef[2], seed=26)
+sim2<-poissonsim(x, a=poisson.coef[1], b=poisson.coef[2], seed=26)
 mean(sim$y == sim2$y)
 ```
 
 The estimated model predicts future observation correctly in the $86\%$ of the cases.
 
 ```{r ex8.6b, echo=TRUE, warning=FALSE}
-sim <- poissonsim(x, a=2, b=rnorm(100, 4, 5), slope.sd=5, seed=26)
-poisson <- glm(y~x, family=poisson, data=sim)
+sim<-poissonsim(x, a=2, b=rnorm(100, 4, 5), slope.sd=5, seed=26)
+poisson<-glm(y~x, family=poisson, data=sim)
+quasi.poisson<-glm(y~x, family=quasipoisson, data=sim)
 summary(poisson)
-quasi.poisson <- glm(y~x, family=quasipoisson, data=sim)
 summary(quasi.poisson)
 ```
 
 The coefficients are the same for both models. The difference between these two models is in the dispersion parameter (which is taken to be $1$ for the poisson family, and $2578221$ for the quasipoisson fmily), thus $p$-values are very different (significantly higher in the case of quasipoisson family).
 
 <!-- knitr::knit("Homework4_2020_GROUP_I.Rmd", tangle = TRUE, output ="Homework1_2020_GROUP_I.R") -->
-  
