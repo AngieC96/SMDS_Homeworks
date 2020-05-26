@@ -1,5 +1,6 @@
 ---
 title: "Homework_4"
+author: "Angela Carraro, Giullia Monteiro Milano Oliveira, Gaia Saveri"
 date: "27/05/2020"
 output:
   rmdformats::readthedown:
@@ -54,6 +55,9 @@ knitr::opts_chunk$set(echo = TRUE, tidy = TRUE)
 ```{r message=FALSE}
 library(MASS)
 library(DAAG)
+library(boot)
+library(dplyr)
+library(lattice)
 ```
 
 ## DAAG Exercises
@@ -63,11 +67,335 @@ Chapter 8 (from page 281), exercises 1, 2, 3, 6.
 
 ### Chapter 6, Exercise 6
 
-**Text**
+**The following investigates the consequences of not using a logarithmic transformation for the `nihills` data analysis. The second differs from the first having a `dist x climb` interaction term, additional to linear terms in `dist` and `climb`.**
+
+a) **Fit the two models:**
+```{r 6.6_req, eval=FALSE}
+library(DAAG)
+nihills.lm <- lm(time ~ dist+climb, data=nihills)
+nihills2.lm <- lm(time ~ dist+climb+dist:climb, data = nihills)
+anova(nihills.lm, nihills2.lm)
+```
+
+b) **Using the $F$-test result, make a tentative choice of model, and proceed to examine diagnostic plots. Are there any problematic observation? What happens if these points are removed? Refit both of the above models, and check the diagnostic again.**
 
 #### Solution
 
+We fit the two models:
+
+```{r 6.6a1}
+nihills.lm <- lm(time ~ dist+climb, data=nihills)
+nihills2.lm <- lm(time ~ dist+climb+dist:climb, data = nihills)
+anova(nihills.lm, nihills2.lm)
+```
+
+The small $p$-value of the $F$-test result of the `anova` table above suggests us to accept the Model 2 (namely the one including an interaction term, thus rejecting the hypothesis that the interaction term should be null) in place of the Model 1.
+
+```{r 6.6a2, echo=TRUE, warning=FALSE}
+#diagnistics for model 2
+par(mfrow=c(2,2), oma=c(0,0,0,0))
+plot(nihills2.lm)
+```
+
+According to the "Residual vs Fitted" plot, we can see that `Slieve Donard` and `Meelberg Meelmore` have high residuals. Moreover, looking at the "Residual vs Leverage" plot we can see that `Seven Sevens` is an outlier (having large Cook's distance). Hence these observation can be considered problematic, we try to remove them from the model and refit it. 
+
+```{r 6.6b, echo=TRUE, warning=FALSE}
+#remove problematic observations
+remove <- c("Slieve Donard", "Meelbeg Meelmore", "Seven Sevens")
+nihills.without <- nihills %>% subset(!rownames(nihills) %in% remove)
+#refit both models
+nihills.lm <- lm(time ~ dist+climb, data=nihills.without)
+nihills2.lm <- lm(time ~ dist+climb+dist:climb, data = nihills.without)
+#check diagnostic plots
+par(mfrow=c(2,2), oma=c(0,0,0,0))
+plot(nihills2.lm)
+plot(nihills.lm)
+```
+
+Checking the diagnostics plots after removing the points that we considered problematic, we can see that `Annalong Horsehoe` is an outlier for Model 1, while there are no more particularly problematic points for Model 2. 
+
+```{r 6.6b2, echo=TRUE, warning=FALSE}
+#check anova again
+anova(nihills.lm, nihills2.lm)
+```
+
+The $p$-value has significantly increased. We can try to remove the point `Annalong Horseshoe`, which is problematic for the first model, and refit both models. 
+
+```{r 6.6b3, echo=TRUE, warning=FALSE}
+nihills.without.annalong <- nihills.without %>% subset(rownames(nihills.without) != "Annalong Horseshoe")
+#refit both models
+nihills.lm <- lm(time ~ dist+climb, data=nihills.without.annalong)
+nihills2.lm <- lm(time ~ dist+climb+dist:climb, data = nihills.without.annalong)
+anova(nihills.lm, nihills2.lm)
+```
+
+The $p$-value is again increased significantly, and the `anova` test now suggests that there is no significant improvement in choosing the more complex Model 1 instead of the simpler Model 2.
+
+--------------------------------------------------------------------------------------------------------------
+
+## Chapter 6, Exercise 8
+
+**Apply the `lm.ridge()` function to the `litters` data, using generalized cross-validation (GCV) criterion to choose the tuning parameter. (GCV is an approximation to cross-validation.)**
+
+a) **In particular, estimate the coefficients of the model relating `brainwt` to `bodywt` and `lsize` and compare with the results obtained using `lm()`.**
+  
+b) **Using both ridge and ordinary regression, estimate the mean brain weight when litter size is $10$ and body weight is $7$. Use the bootstrap, with case-resampling, to compute approximate $95\%$ percentile confidence intervals using each method. Compare with the interval obtained using `predict.lm()`.**
+
+#### Solution
+
+```{r 6.8a}
+MASS::select(lm.ridge(brainwt ~ bodywt + lsize, data=litters, lambda=seq(0, 0.1, 0.01)))
+#GCV suggests optimal lambda to be 0.1
+litters.lm.ridge <- lm.ridge(brainwt ~ bodywt + lsize, data=litters, lambda=0.1)
+#lm.ridge coefficients  
+litters.lm.ridge
+litters.lm <- lm(brainwt ~ bodywt + lsize, data=litters)$coefficients
+litters.lm
+```
+
+Comparing the coefficients of the two models, we can see that both the coefficients of `bodywt` and `lsize` in the ridge model are penalized in favor of the intercept coefficient. 
+
+```{r 6.8b, echo=TRUE, warning=FALSE}
+#estimation for the ridge regression model 
+paste("Ridge estimate: ", as.vector(coef(litters.lm.ridge))%*%c(1,7,10))
+#estimation for the lm model
+paste("lm estimate: ", as.vector(litters.lm%*%c(1,7,10)))
+
+#boostrap c.i. for ordinary lm
+lm.boot.stat<-function(data, formula, i) {
+  d <- data[i,] #select the sample
+  litters.lm <-summary(lm(formula, data=d))$coefficients[,1] #coeff estimate from the model
+  return(as.vector(litters.lm%*%c(1,7,10)))
+}
+
+boot.lm<-boot(data=litters, statistic=lm.boot.stat, formula=brainwt~bodywt+lsize, R=1000)
+boot.ci(boot.lm, type="perc")
+
+#bootstrap c.i. for ridge lm
+ridge.boot.stat<-function(data, formula, i) {
+  d<-data[i,] #select the sample
+  litters.ridge<-as.vector(coef(lm.ridge(formula, data=d, lambda=0.1)))
+  return(litters.ridge%*%c(1,7,10))
+}
+
+boot.ridge<-boot(data=litters, statistic=ridge.boot.stat, formula=brainwt~bodywt+lsize, R=1000)
+boot.ci(boot.ridge, type="perc")
+
+#interval obtained using predict.lm
+new.data<-data.frame(bodywt=7, lsize=10)
+predict.lm(lm(brainwt~bodywt+lsize, data=litters), new.data, interval="confidence")
+
+```
+
+We can observe that bootstrap-based confidence intervals and `predict.lm()` confidence interval are similar.
+
+--------------------------------------------------------------------------------------------------------------
+
+### Chapter 6, Exercise 10
 
 
+--------------------------------------------------------------------------------------------------------------
 
-<!-- knitr::knit("Homework1_2020_GROUP_I.Rmd", tangle = TRUE, output ="Homework1_2020_GROUP_I.R") -->
+
+### Chapter 6, Exercise 11
+
+**The following code is designed to explore effects that can result from the omission of explanatory variables:**
+
+```{r, eval=FALSE}
+> x1 <- runif(10)                       # predictor which will be missing
+> x2 <- rbinom(10, 1, 1-x1)             # observed predictor which depends
+>                                       # on missing predictor
+> y <- 5*x1 + x2 + rnorm(10, sd=.1)     # simulated model; coef
+>                                       # of x2 is positive
+> y.lm <- lm(y ~ factor(x2))            # model fitted to observed data
+> coef(y.lm)
+(Intercept) factor(x2)1
+ 2.8224119 -0.6808925                   # effect of missing variable:
+                                        # coefficient of x2 has wrong sign
+> y.lm2 <- lm(y ~ x1 + factor(x2))      # correct model
+> coef(y.lm2)
+(Intercept)        x1  factor(x2)1
+0.06654892 4.91216206  0.92489061       # coef estimates are now OK
+```
+
+What happens if `x2` is generated according to `x2 <- rbinom(10, 1, x1)`?
+`x2 <- rbinom(10, 1, .5)`?
+
+#### Solution
+
+The model of the example is:
+
+```{r}
+x1 <- runif(10)                       # predictor which will be missing
+x2 <- rbinom(10, 1, 1-x1)             # observed predictor which depends
+y <- 5*x1 + x2 + rnorm(10, sd=.1)     # simulated model; coef of x2 is positive
+y.lm <- lm(y ~ factor(x2))            # model fitted to observed data
+coef(y.lm)
+```
+
+We can see the effect of missing variable: sometimes the coefficient of `x2` has wrong sign.
+
+```{r}
+y.lm2 <- lm(y ~ x1 + factor(x2))      # correct model
+coef(y.lm2)
+```
+
+The coefficients estimates are now OK.
+
+If `x2` is generated according to `x2 <- rbinom(10, 1, x1)`, so if it is a Binomial with a probability equal to $x1$ (that is the complementary of the previous probability of `x2`) we have that
+
+```{r}
+x2 <- rbinom(10, 1, x1)
+y2 <- 5*x1 + x2 + rnorm(10, sd=.1)
+y2.lm <- lm(y ~ factor(x2))
+coef(y2.lm)
+```
+
+Now the coefficient of `x2` has no more wrong sign, and is instead very close to the real coefficient $1$.
+
+```{r}
+y2.lm2 <- lm(y ~ x1 + factor(x2))
+coef(y2.lm2)
+```
+
+We can see that instead with the addition of the variable `x1`, as the model wuold require, sometimes the coeeficent of `x2` has wrong sign.
+
+Instead if `x2` is generated according to `x2 <- rbinom(10, 1, .5)`, so with a probability equal to $0.5$, we have that
+
+```{r}
+x2 <- rbinom(10, 1, .5)
+y3 <- 5*x1 + x2 + rnorm(10, sd=.1)
+y3.lm <- lm(y ~ factor(x2))
+coef(y3.lm)
+y3.lm2 <- lm(y ~ x1 + factor(x2))
+coef(y3.lm2)
+```
+
+So we can see that now the variable `x2` can have negative sign in both the two models. Beside, now the estimate of the coefficient of `x1` is not so accurate.
+
+--------------------------------------------------------------------------------------------------------------
+
+### Chapter 8, Exercise 1
+
+
+--------------------------------------------------------------------------------------------------------------
+
+### Chapter 8, Exercise 2
+
+
+--------------------------------------------------------------------------------------------------------------
+
+### Chapter 8, Exercise 3
+
+**Consider again the `moths` data set of Section 8.4.**
+
+a) **What happens to the standard error estimates when the `poisson` family is used in `glm()` instead of the `quasipoisson` family?**
+
+b) **Analyze the $P$ moths, in the same way as the $A$ moths were analyzed. Comment on the effect of transect length.**
+
+#### Solution
+
+The code to generate the figure is taken from DAAG book, page 261 (with a correction seen in the [file](https://maths-people.anu.edu.au/~johnm/r-book/3edn/updates/updates2013-2018-bklt.pdf) at this [page](https://maths-people.anu.edu.au/~johnm/r-book/daagur3.html)).
+
+```{r}
+## Number of moths by habitat
+rbind(Number=table(moths[, 4]), sapply(split(moths[, -4], moths$habitat), apply, 2, sum));
+```
+
+Here, `Number` is the number of transects for that habitat, while `meters` is the total length.
+
+```{r}
+dotplot(habitat ~ A, data=moths, xlab="Number of moths (species A)", panel=function(x, y, ...){
+    panel.dotplot(x,y, pch=1, col="black", ...)
+    av <- sapply(split(x,y),mean)
+    ypos <- unique(y)
+    lpoints(ypos~av, pch=3, cex=1.25, col="black")
+  }, key=list(text=list(c("Individual transects", "Mean")),
+  points=list(pch=c(1,3), cex=c(1,1.25), col=c("black","gray45")), columns=2))
+```
+
+The model will take the form
+  
+$$
+y = \text{habitat effect} + \beta \log(\text{length of section})
+$$
+where $y = \log(\text{expected number of moths})$.
+
+No moths of the first species `A` were found in the `Bank` habitat. This zero count creates problems for the calculation of standard errors. The difficulty can be avoided, for habitats other than `Bank`, by taking `Lowerside` as the reference.
+
+```{r}
+moths$habitat <- relevel(moths$habitat, ref="Lowerside")
+```
+
+a. We first use the `quasipoisson` family:
+
+```{r}
+summary(A1.glm <- glm(A ~ habitat + log(meters), family=quasipoisson, data=moths))
+```
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Then instead we use the `poisson` family in `glm()`:
+
+```{r}
+summary(A2.glm <- glm(A ~ habitat + log(meters), family=poisson, data=moths))
+```
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; The use of a quasi-Poisson model, rather than a Poisson model, has increased standard errors by a factor of $\sqrt{2.7} = 1.64$. So the standard error estimates when the `poisson` family is used in `glm()` instead of the `quasipoisson` family are reduced by a factor of $1/\sqrt{2.7} = 0,61$. Besides, with the Poisson model more coefficents are become statistically significant.
+
+```{r eval=FALSE, include=FALSE}
+plot(glm(formula = A ~ habitat + log(meters), family = quasipoisson, data = moths, subset=habitat!="Bank"), panel=panel.smooth)
+```
+
+b) We now analyze the $P$ moths, in the same way as the $A$ moths were analyzed. We first use the `quasipoisson` family:
+
+```{r}
+summary(P1.glm <- glm(P ~ habitat + log(meters), family=quasipoisson, data=moths))
+```
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Then instead we use the `poisson` family in `glm()`:
+
+```{r}
+summary(P1.glm <- glm(P ~ habitat + log(meters), family=poisson, data=moths))
+```
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; With the specie `A` we can notice that the coefficient of `log(meters)` is not statistically significant. This species `A` avoids flying over long open regions. Their preferred habitats were typically at the ends of transects. As a result, the length of the transect made little difference to the number of moths observed. On the contrary, for the species `P` the coefficient of `log(meters)` is really statistically significant (in both the two models is is less than $0.005$). So the length of the transect affects the number of moths observed.
+
+--------------------------------------------------------------------------------------------------------------
+
+### Chapter 8, Exercise 6
+
+**As in the previous exercise, the function `poissonsim()` allows for experimentation with Poisson regression. In particular, `poissonsim()` can be used to simulate Poisson responses with log-rates equal to $a + bx$, where $a$ and $b$ are fixed values by default.**
+
+a) **Simulate $100$ Poisson responses using the model $$log\lambda = 2 -4x$$ for $x=0, 0.01, 0.02,\dots,1.0$. Fit a Poisson regression model to these data, and compare the estimated coefficients with the true coefficients. How well does the estimated model predict future observations?**
+  
+b) **Simulate $100$ Poisson responses using the model $$log\lambda  = 2-bx$$ where $b$ is normally distributed with mean $4$ and standard deviation $5$. [Use the argument `slope.sd=5`, in the `poissonsim()` function]. How do the results using the `poisson` and `quasipoisson` families differ?  **
+  
+#### Solution
+
+```{r ex8.6a, echo=TRUE, warning=FALSE}
+x <- seq(0,1,0.01)
+sim <- poissonsim(x, a=2, b=-4, seed=26)
+
+#poisson regression model fitting
+poisson.fit <- glm(y~x, family=poisson, data=sim)
+#estimated coefficients 
+poisson.coef <- summary(poisson.fit)$coeff
+poisson.coef
+
+sim2 <- poissonsim(x, a=poisson.coef[1], b=poisson.coef[2], seed=26)
+mean(sim$y == sim2$y)
+```
+
+The estimated model predicts future observation correctly in the $86\%$ of the cases.
+
+```{r ex8.6b, echo=TRUE, warning=FALSE}
+sim <- poissonsim(x, a=2, b=rnorm(100, 4, 5), slope.sd=5, seed=26)
+poisson <- glm(y~x, family=poisson, data=sim)
+summary(poisson)
+quasi.poisson <- glm(y~x, family=quasipoisson, data=sim)
+summary(quasi.poisson)
+```
+
+The coefficients are the same for both models. The difference between these two models is in the dispersion parameter (which is taken to be $1$ for the poisson family, and $2578221$ for the quasipoisson fmily), thus $p$-values are very different (significantly higher in the case of quasipoisson family).
+
+<!-- knitr::knit("Homework4_2020_GROUP_I.Rmd", tangle = TRUE, output ="Homework1_2020_GROUP_I.R") -->
+  
