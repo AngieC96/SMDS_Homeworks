@@ -124,7 +124,8 @@ anova(nihills.lm, nihills2.lm)
 The $p$-value has significantly increased. We can try to remove the point `Annalong Horseshoe`, which is problematic for the first model, and refit both models. 
 
 ```{r 6.6b3, echo=TRUE, warning=FALSE}
-nihills.without.annalong <- nihills.without %>% subset(rownames(nihills.without) != "Annalong Horseshoe")
+nihills.without.annalong <- nihills.without %>% subset(rownames(nihills.without)
+                                                       != "Annalong Horseshoe")
 #refit both models
 nihills.lm <- lm(time ~ dist+climb, data=nihills.without.annalong)
 nihills2.lm <- lm(time ~ dist+climb+dist:climb, data = nihills.without.annalong)
@@ -138,7 +139,8 @@ plot(nihills.lm)
 The point `Flagstaff to Carling` has now high Cook distance for both models, so we try to remove this point too.
 
 ```{r 6.6b4}
-nihills.without.flagstaff <- nihills.without.annalong %>% subset(rownames(nihills.without.annalong) != "Flagstaff to Carling")
+nihills.without.flagstaff <- nihills.without.annalong %>% subset(rownames(nihills.without.annalong)
+                                                                 != "Flagstaff to Carling")
 nihills.lm <- lm(time ~ dist + climb, data=nihills.without.flagstaff)
 nihills2.lm <- lm(time ~ dist + climb + dist:climb, data = nihills.without.flagstaff)
 par(mfrow=c(2,2), oma=c(0,0,0,0))
@@ -243,12 +245,13 @@ plot(x1, y, pch=20, col="green", cex=1.5, xlab="displacement", ylab="mpg", main=
 b) The plot is
 
 ```{r 6.10b, echo=TRUE}
-xyplot(y~x1, groups=x11, data=gas_mil, type = c("p", "r"), pch=20, cex=1.5, xlab="displacement", ylab="mpg", main="Scatterplot")
+xyplot(y~x1, groups=x11, data=gas_mil, type = c("p", "r"), pch=20, cex=1.5, xlab="displacement",
+       ylab="mpg", main="Scatterplot")
 ```
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Taking into consideration the variable x11 as a group variable, a linear model might not be the most appropriate model for this data because this variable separates the data into two distinct groups. Each group covers a different range of the variable x1. Therefore, this might be influencing the model and making it non-linear.
 
-c) The fitted dmodel is
+c) The fitted model is
 
 ```{r 6.10c, echo=TRUE}
 fit1 <- lm(y~x1+x11, data=gas_mil)
@@ -381,6 +384,7 @@ summary(conc.logit)
 ```
 
 The results suggests that `conc` is a reasonable explanatory variable for the occurrence of inhibition in a time lapse of $120 s$.
+
 --------------------------------------------------------------------------------------------------------------
 
 ## Chapter 8, Exercise 2
@@ -403,11 +407,11 @@ summary(fit.glm)
 
 #predicting
 glm.probs <- predict(fit.glm, newdata=test, type="response")
-glm.probs[1:10]
+glm.probs[1:24]
 
 #setting the threshold, where "yes" means "use of CT"
 glm.predict <- ifelse(glm.probs>0.025, "yes", "no")
-glm.predict[1:10]
+glm.predict[1:24]
 ```
 
 --------------------------------------------------------------------------------------------------------------
