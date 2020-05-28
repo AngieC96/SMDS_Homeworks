@@ -97,7 +97,7 @@ par(mfrow=c(2,2), oma=c(0,0,0,0))
 plot(nihills2.lm)
 ```
 
-According to the Residual vs Fitted plot, we can see that `Slieve Donard` and `Meelberg Meelmore` have high residuals. Moreover, looking at the Residual vs Leverage plot we can see that `Seven Sevens` is an outlier (having large Cook's distance). Hence these observation can be considered problematic, we try to remove them from the model and refit it. 
+According to the Residual vs Fitted plot, we can see that `Slieve Donard` and `Meelberg Meelmore` have high residuals. Moreover, looking at the Residual vs Leverage plot we can see that `Seven Sevens` is an outlier (having large Cook's distance). Hence these observation can be considered problematic, we decided to remove them from the model and refit it. 
 
 ```{r 6.6b, echo=TRUE, warning=FALSE}
 #remove problematic observations
@@ -121,7 +121,7 @@ Checking the diagnostics plots after removing the points that we considered prob
 anova(nihills.lm, nihills2.lm)
 ```
 
-The $p$-value has significantly increased. We can try to remove the point `Annalong Horseshoe`, which is problematic for the first model, and refit both models. 
+The $p$-value has significantly increased. We can remove the point `Annalong Horseshoe`, which is problematic for the first model, and refit both models. 
 
 ```{r 6.6b3, echo=TRUE, warning=FALSE}
 nihills.without.annalong <- nihills.without %>% subset(rownames(nihills.without)
@@ -136,7 +136,7 @@ plot(nihills2.lm)
 plot(nihills.lm)
 ```
 
-The point `Flagstaff to Carling` has now high Cook distance for both models, so we try to remove this point too.
+The point `Flagstaff to Carling` has now high Cook distance for both models, so we decided to remove this point too.
 
 ```{r 6.6b4}
 nihills.without.flagstaff <- nihills.without.annalong %>% subset(rownames(nihills.without.annalong)
@@ -150,7 +150,7 @@ plot(nihills2.lm)
 plot(nihills.lm)
 ```
 
-We removed all problematic points. We check the `anova` test again:
+We can see that we removed all problematic points. We check the `anova` test again:
 
 ```{r 6.6b5}
 anova(nihills.lm, nihills2.lm)
@@ -331,7 +331,7 @@ y2.lm <- lm(y ~ factor(x2))
 coef(y2.lm)
 ```
 
-Now the coefficient of `x2` has no more wrong sign, and is instead very close to the real coefficient $1$.
+Now the coefficient of `x2` has no more wrong sign, and but sometimes it is instead quite different from the real coefficient $1$.
 
 ```{r}
 y2.lm2 <- lm(y ~ x1 + factor(x2))
@@ -351,7 +351,7 @@ y3.lm2 <- lm(y ~ x1 + factor(x2))
 coef(y3.lm2)
 ```
 
-So we can see that now the variable `x2` can have negative sign in both the two models. Beside, now the estimate of the coefficient of `x1` is not so accurate.
+So we can see that now the variable `x2` can have negative sign in both the two models. Beside, now sometimes the estimate of the coefficient of `x1` is not so accurate.
 
 --------------------------------------------------------------------------------------------------------------
 
@@ -409,10 +409,20 @@ summary(fit.glm)
 glm.probs <- predict(fit.glm, newdata=test, type="response")
 glm.probs[1:24]
 
-#setting the threshold, where "yes" means "use of CT"
-glm.predict <- ifelse(glm.probs>0.025, "yes", "no")
+#setting the threshold, where "1" means "use of CT"
+glm.predict <- ifelse(glm.probs>0.025, 1, 0)
 glm.predict[1:24]
+
+#calculating the confusion matrix
+real <- test$clinically.important.brain.injury
+conf_mat1 <- table(glm.predict,real) 
+conf_mat1
+
+#calculating the accuracy
+print(paste("The accuracy is:", mean(glm.predict==real)))
 ```
+
+A logistic regression model was built with a threshold of $0.025$ and the accuracy of the test was calculated. If the predicted probability is greater than $0.025$ the result of the test is $1$, which means that the patient will be sent to CT.
 
 --------------------------------------------------------------------------------------------------------------
 
@@ -471,7 +481,7 @@ summary(A1.glm <- glm(A ~ habitat + log(meters), family=quasipoisson, data=moths
 summary(A2.glm <- glm(A ~ habitat + log(meters), family=poisson, data=moths))
 ```
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; The use of a quasi-Poisson model, rather than a Poisson model, has increased standard errors by a factor of $\sqrt{2.7} = 1.64$. So the standard error estimates when the `poisson` family is used in `glm()` instead of the `quasipoisson` family are reduced by a factor of $1/\sqrt{2.7} = 0,61$. Besides, with the Poisson model more coefficents are become statistically significant.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; The use of a quasi-Poisson model, rather than a Poisson model, has increased standard errors by a factor of $\sqrt{2.7} = 1.64$, where $2.7$ is the dispersion parameter. So the standard error estimates when the `poisson` family is used in `glm()` instead of the `quasipoisson` family are reduced by a factor of $1/\sqrt{2.7} = 0,61$. Besides, with the Poisson model more coefficents are become statistically significant.
 
 ```{r eval=FALSE, include=FALSE}
 plot(glm(formula = A ~ habitat + log(meters), family = quasipoisson, data = moths, subset=habitat!="Bank"), panel=panel.smooth)
@@ -522,8 +532,8 @@ The estimated model predicts future observation correctly in the $86\%$ of the c
 ```{r ex8.6b, echo=TRUE, warning=FALSE}
 sim<-poissonsim(x, a=2, b=rnorm(100, 4, 5), slope.sd=5, seed=26)
 poisson<-glm(y~x, family=poisson, data=sim)
-quasi.poisson<-glm(y~x, family=quasipoisson, data=sim)
 summary(poisson)
+quasi.poisson<-glm(y~x, family=quasipoisson, data=sim)
 summary(quasi.poisson)
 ```
 
