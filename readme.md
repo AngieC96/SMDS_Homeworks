@@ -10,6 +10,7 @@ The assigned exercises could come from different books/sources, generally we wil
 - **CS**: for the exercises from *[Core Statistics](https://people.maths.bris.ac.uk/~sw15190/core-statistics.pdf)*, by Simon N. Wood.
 - **LAB**: for the exercises contained in the [laboratory sessions](https://moodle2.units.it/course/view.php?id=5505) held on *Microsoft Teams*.
 - **LEC**: for the exercises from theoretical lectures.
+- **BC**: for the exercises from *Bayesian Computation with R*, by J. Albert.
 
 
 ## Homeworks
@@ -102,10 +103,26 @@ In this section are listed the homeworks assigned from the previously cited sour
   * DAAG: Chapter 6: exercises 6, 8, 10, 11.
   * DAAG: Chapter 8: exercises 1, 2, 3, 6.
 
-|                                  | DAAG |
-| -------------------------------- | ---- |
-| Angela Carraro                   |      |
-| Giullia Monteiro Milano Oliveira |      |
-| Gaia Saveri                      |      |
+|                                  | DAAG           |
+| -------------------------------- | -------------- |
+| Angela Carraro                   | 6.11, 8.3      |
+| Giullia Monteiro Milano Oliveira | 6.10, 8.1, 8.2 |
+| Gaia Saveri                      | 6.6, 6.8, 8.6  |
 
 - **Grade:** -
+
+### Homework 5
+
+- **Due date:** Wednesday 22th June 2020
+- **Group:** Group E
+- **Members:** Emanuele Ballarin, Angela Carraro, Pietro Morichetti
+- **Exercises:**
+  - CS: 1.3, 4.3
+  - DAAG: 4.5, 11.5
+  - BC: 3.2
+
+|                   | CS   | DAAG | BC   |
+| ----------------- | ---- | ---- | ---- |
+| Emanuele Ballarin |      |      | 3.2  |
+| Angela Carraro    | 1.3  | 11.5 |      |
+| Pietro Morichetti | 4.3  | 4.5  |      |
